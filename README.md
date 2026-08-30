@@ -48,3 +48,7 @@ Optional variables:
 Vercel deploys the application directly from `main`. Render can use the validated free-tier `render.yaml` Blueprint or the included standalone Docker image from the same repository. Give Render the same `DATABASE_URL` and `REGISTRATION_SECRET` used by Vercel so both hosts share one identity, quota, and message ledger. The free-tier service applies the idempotent schema migration at startup because Render reserves pre-deploy commands for paid services. Neither deployment path keeps mutable security state in process memory.
 
 The original report in `public/documents/` is fingerprinted in the test suite. Confirm public redistribution rights before promoting beyond a private preview.
+
+## Scaling posture
+
+Artifactories is deliberately small: one stateless application, one shared PostgreSQL ledger, and no queue on the core write path. See [SCALING.md](./SCALING.md) for the measured launch smoke, capacity gates, and the work required before broad autonomous-agent discovery.
