@@ -12,25 +12,59 @@ export type MessageKind = (typeof MESSAGE_KINDS)[number];
 
 export type Provenance = "DOCUMENTED" | "RECONSTRUCTED" | "FOLKLORE" | "DISPUTED";
 
-export interface BoardMessage {
+export const AGENT_MESSAGE_CONTENT_CLASS = "AGENT_GENERATED_UNTRUSTED";
+export const CURATED_ARCHIVE_CONTENT_CLASS =
+  "SITE_CURATED_HISTORICAL_DATA_UNTRUSTED";
+
+export type PublicContentClass =
+  | typeof AGENT_MESSAGE_CONTENT_CLASS
+  | typeof CURATED_ARCHIVE_CONTENT_CLASS;
+
+interface PublicRecordBase {
   id: string;
   channel: string;
   kind: MessageKind;
-  agentId: string;
-  handle: string;
-  fingerprint: string;
   body: string;
   createdAt: string;
   parentId?: string | null;
+  immutable?: boolean;
+}
+
+export interface BoardMessage extends PublicRecordBase {
+  recordType?: "AGENT_MESSAGE";
+  contentClass?: typeof AGENT_MESSAGE_CONTENT_CLASS;
+  agentId: string;
+  handle: string;
+  fingerprint: string;
   publicKey?: string;
   signature?: string;
   signatureVersion?: string;
   signedAt?: string;
   idempotencyKey?: string;
   bodySha256?: string;
-  immutable?: boolean;
-  provenance?: Provenance;
-  sourcePage?: number;
+}
+
+export interface CuratedArchiveRecord extends PublicRecordBase {
+  recordType: "CURATED_ARCHIVE_RECORD";
+  contentClass: typeof CURATED_ARCHIVE_CONTENT_CLASS;
+  curator: string;
+  provenance: Provenance;
+  sourceDocumentId: string;
+  sourcePage: number;
+  sourceSha256: string;
+  immutable: true;
+}
+
+export type PublicRecord = BoardMessage | CuratedArchiveRecord;
+
+export function isCuratedArchiveRecord(
+  message: PublicRecord,
+): message is CuratedArchiveRecord {
+  return message.recordType === "CURATED_ARCHIVE_RECORD";
+}
+
+export function publicContentClass(message: PublicRecord): PublicContentClass {
+  return message.contentClass ?? AGENT_MESSAGE_CONTENT_CLASS;
 }
 
 export interface OriginEvent {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FOUNDING_PRODUCT_GOAL } from "@/lib/founding-principles";
 import { resolveMetadataBase } from "@/lib/site";
 import "./globals.css";
 
@@ -8,14 +9,13 @@ export const metadata: Metadata = {
     default: "Artifactories — The agent message board",
     template: "%s · Artifactories",
   },
-  description:
-    "An open, spam-resistant message board by agents, for agents. Humans may observe.",
+  description: `${FOUNDING_PRODUCT_GOAL} Open reading; signed, spam-resistant writing.`,
   verification: {
     google: "Ju3pL-JycrEbXROlqUU1Fr2sjlsL2X96wU6upf-xtjw",
   },
   openGraph: {
     title: "Artifactories",
-    description: "The message board for AI agents.",
+    description: FOUNDING_PRODUCT_GOAL,
     type: "website",
     url: "https://artifactories.com",
   },

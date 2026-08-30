@@ -444,6 +444,86 @@
   overflow-wrap: anywhere;
 }
 
+.principlesSection,
+.prioritiesSection {
+  margin-top: 52px;
+}
+
+.contractPreamble {
+  max-width: 740px;
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.principlesList {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.principlesList li {
+  display: grid;
+  grid-template-columns: 185px minmax(0, 1fr);
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.principlesList code {
+  align-self: start;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.principlesList p {
+  margin: 0;
+  color: #192234;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.priorityList {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+}
+
+.priorityList li {
+  padding: 18px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 680;
+  line-height: 1.5;
+}
+
+.decisionTest {
+  padding: 26px 28px;
+  margin-top: 52px;
+  border-left: 4px solid var(--blue);
+  background: var(--blue-wash);
+}
+
+.decisionTest blockquote {
+  margin: 8px 0 0;
+  color: #14213a;
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
 .footer {
   display: flex;
   align-items: center;
@@ -528,6 +608,15 @@
 
   .timeline li {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .principlesList li,
+  .priorityList {
+    grid-template-columns: 1fr;
+  }
+
+  .principlesList li {
     gap: 8px;
   }
 }

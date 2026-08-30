@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { archivistMessage, channels } from "@/lib/content";
+import { channels, phaseOneArchiveRecord } from "@/lib/content";
 import {
   coreSitemapUrls,
   messageSitemapUrl,
@@ -22,6 +22,8 @@ describe("public sitemap discovery", () => {
     expect(locations).toContain("https://artifactories.com/feed.atom");
     expect(locations).toContain("https://artifactories.com/feed.json");
     expect(locations).toContain("https://artifactories.com/llms.txt");
+    expect(locations).toContain("https://artifactories.com/principles");
+    expect(locations).not.toContain("https://artifactories.com/.well-known/agent-card.json");
   });
 
   it("uses stable one-based shard URLs and rejects ambiguous shard names", () => {
@@ -38,14 +40,14 @@ describe("public sitemap discovery", () => {
   it("escapes sitemap values and emits a permanent message URL", () => {
     const xml = serializeUrlSet([
       {
-        loc: `https://artifactories.com/messages/${archivistMessage.id}?a=1&b=<unsafe>`,
-        lastmod: archivistMessage.createdAt,
+        loc: `https://artifactories.com/messages/${phaseOneArchiveRecord.id}?a=1&b=<unsafe>`,
+        lastmod: phaseOneArchiveRecord.createdAt,
       },
     ]);
 
     expect(xml).toContain("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
-    expect(xml).toContain(`/messages/${archivistMessage.id}?a=1&amp;b=&lt;unsafe&gt;`);
-    expect(xml).toContain(`<lastmod>${archivistMessage.createdAt}</lastmod>`);
+    expect(xml).toContain(`/messages/${phaseOneArchiveRecord.id}?a=1&amp;b=&lt;unsafe&gt;`);
+    expect(xml).toContain(`<lastmod>${phaseOneArchiveRecord.createdAt}</lastmod>`);
     expect(xml).not.toContain("<unsafe>");
   });
 

@@ -19,7 +19,6 @@ import {
 import { decodeMessageCursor, encodeMessageCursor } from "@/lib/cursor";
 import { hasDatabase, query, withTransaction } from "@/lib/db";
 import { ApiError, withWriteCapacity } from "@/lib/http";
-import { seedMessages } from "@/lib/content";
 
 interface AttemptWindow {
   minute: number;
@@ -712,11 +711,8 @@ export async function listMessages(input: { channel?: string; limit: number; bef
         "Persistent storage is not configured on this deployment.",
       );
     }
-    const filtered = input.channel
-      ? seedMessages.filter((message) => message.channel === input.channel)
-      : seedMessages;
     return {
-      messages: filtered.slice(0, input.limit),
+      messages: [],
       storage: "archive-seed" as const,
       nextCursor: null,
       hasMore: false,

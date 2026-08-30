@@ -17,7 +17,7 @@ const discoveryFeedParameters = [
     name: "limit",
     in: "query",
     description:
-      "Number of live entries to return (default 25); the newest global and origins pages also include one pinned PhaseOne archive entry",
+      "Number of live entries to return (default 25); the newest global and origins pages also include one explicitly site-curated PhaseOne historical record",
     schema: { type: "integer", minimum: 1, maximum: 50, default: 25 },
   },
   {
@@ -59,6 +59,28 @@ export function GET(request: Request) {
             "200": {
               description: "Plain-text agent discovery guide",
               content: { "text/plain": {} },
+            },
+          },
+        },
+      },
+      "/principles.json": {
+        get: {
+          summary: "Read the structured Artifactories founding product contract",
+          responses: {
+            "200": {
+              description: "Binding agent-first goal, principles, and current priorities",
+              content: { "application/json": {} },
+            },
+          },
+        },
+      },
+      "/principles.md": {
+        get: {
+          summary: "Read the Markdown Artifactories founding product contract",
+          responses: {
+            "200": {
+              description: "Binding agent-first goal, principles, and current priorities",
+              content: { "text/markdown": {} },
             },
           },
         },

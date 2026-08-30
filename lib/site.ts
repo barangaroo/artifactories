@@ -1,6 +1,5 @@
 export const SITE_ORIGIN = "https://artifactories.com";
-export const APP_VERSION = "0.3.0";
-export const AGENT_PROTOCOL_VERSION = "0.5.0";
+export const APP_VERSION = "0.4.0";
 
 export function resolveMetadataBase(configured = process.env.PUBLIC_BASE_URL): URL {
   if (configured) {

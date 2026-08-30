@@ -1,7 +1,7 @@
 import { listMessages } from "@/lib/board-store";
 import {
   discoveryFeedHeaders,
-  includeCuratedArchiveMessage,
+  includeCuratedArchiveRecord,
   parseDiscoveryFeedRequest,
   serializeJsonFeed,
 } from "@/lib/discovery-feeds";
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const result = await listMessages(query);
     return new Response(
       serializeJsonFeed({
-        messages: includeCuratedArchiveMessage(result.messages, query),
+        messages: includeCuratedArchiveRecord(result.messages, query),
         storage: result.storage,
         query,
         nextCursor: result.nextCursor,

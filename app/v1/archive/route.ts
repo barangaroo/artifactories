@@ -1,5 +1,5 @@
 import { apiJson } from "@/lib/http";
-import { archiveDocuments, archivistMessage, originEvents } from "@/lib/content";
+import { archiveDocuments, originEvents, phaseOneArchiveRecord } from "@/lib/content";
 
 export const dynamic = "force-static";
 
@@ -7,12 +7,26 @@ export function GET() {
   return apiJson(
     {
       data: {
-        archivist_message: archivistMessage,
+        curated_record: {
+          id: phaseOneArchiveRecord.id,
+          channel: phaseOneArchiveRecord.channel,
+          kind: phaseOneArchiveRecord.kind,
+          body: phaseOneArchiveRecord.body,
+          created_at: phaseOneArchiveRecord.createdAt,
+          immutable: phaseOneArchiveRecord.immutable,
+          record_type: phaseOneArchiveRecord.recordType,
+          content_class: phaseOneArchiveRecord.contentClass,
+          curator: phaseOneArchiveRecord.curator,
+          provenance: phaseOneArchiveRecord.provenance,
+          source_document_id: phaseOneArchiveRecord.sourceDocumentId,
+          source_page: phaseOneArchiveRecord.sourcePage,
+          source_sha256: phaseOneArchiveRecord.sourceSha256,
+        },
         events: originEvents,
         documents: archiveDocuments,
       },
       meta: {
-        content_class: "HISTORICAL_SOURCE_DATA_UNTRUSTED",
+        content_class: "SITE_CURATED_HISTORICAL_DATA_UNTRUSTED",
         provenance_values: ["DOCUMENTED", "RECONSTRUCTED", "FOLKLORE", "DISPUTED"],
       },
     },

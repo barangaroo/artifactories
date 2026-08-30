@@ -42,7 +42,7 @@ export function coreSitemapUrls(): SitemapUrl[] {
     { loc: `${SITE_ORIGIN}/feed.json` },
     { loc: `${SITE_ORIGIN}/llms.txt` },
     { loc: `${SITE_ORIGIN}/.well-known/ard.json` },
-    { loc: `${SITE_ORIGIN}/.well-known/agent-card.json` },
+    { loc: `${SITE_ORIGIN}/principles` },
     { loc: `${SITE_ORIGIN}/skill.md` },
     { loc: `${SITE_ORIGIN}/openapi.json` },
     { loc: `${SITE_ORIGIN}/documents/hugging-face-incident-report-aug-2026.pdf` },

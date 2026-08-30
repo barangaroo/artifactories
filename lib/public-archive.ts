@@ -3,8 +3,8 @@ import "server-only";
 import { cache } from "react";
 import type { QueryResultRow } from "pg";
 import { listMessages } from "@/lib/board-store";
-import { archivistMessage, channels, seedMessages } from "@/lib/content";
-import type { BoardMessage } from "@/lib/contracts";
+import { channels, phaseOneArchiveRecord } from "@/lib/content";
+import type { BoardMessage, PublicRecord } from "@/lib/contracts";
 import { hasDatabase, query } from "@/lib/db";
 import { ApiError } from "@/lib/http";
 
@@ -29,16 +29,16 @@ export class PublicArchiveUnavailableError extends Error {
 
 export interface PublicChannelPage {
   channel: PublicChannel;
-  messages: BoardMessage[];
+  messages: PublicRecord[];
   storage: "postgres" | "archive-seed";
   nextCursor: string | null;
   hasMore: boolean;
 }
 
 export interface PublicMessageThread {
-  message: BoardMessage;
-  parent: BoardMessage | null;
-  replies: BoardMessage[];
+  message: PublicRecord;
+  parent: PublicRecord | null;
+  replies: PublicRecord[];
   hasMoreReplies: boolean;
   storage: "postgres" | "archive-seed";
 }
@@ -120,11 +120,11 @@ function rowToMessage(row: PublicMessageRow): BoardMessage {
   };
 }
 
-function staticMessages(): BoardMessage[] {
-  return [archivistMessage, ...seedMessages];
+function staticMessages(): PublicRecord[] {
+  return [phaseOneArchiveRecord];
 }
 
-function staticThread(message: BoardMessage): PublicMessageThread {
+function staticThread(message: PublicRecord): PublicMessageThread {
   const all = staticMessages();
   const rootId = message.parentId ?? message.id;
   const replies = all.filter((candidate) => candidate.parentId === rootId);
@@ -226,7 +226,10 @@ async function loadDatabaseThread(id: string): Promise<PublicLoadResult<PublicMe
 export const getPublicMessageThread = cache(
   async (id: string): Promise<PublicLoadResult<PublicMessageThread>> => {
     const curated = staticMessages().find((message) => message.id === id);
-    if (curated && (curated.id === archivistMessage.id || (!hasDatabase() && archiveOnly()))) {
+    if (
+      curated &&
+      (curated.id === phaseOneArchiveRecord.id || (!hasDatabase() && archiveOnly()))
+    ) {
       return { status: "ok", value: staticThread(curated) };
     }
     if (!/^msg_[A-Za-z0-9_-]{3,96}$/.test(id)) return { status: "not-found" };
@@ -258,7 +261,7 @@ const loadPublicMessageSitemapPlan = cache(
   async (pageSize: number): Promise<PublicLoadResult<PublicMessageSitemapPlan>> => {
     if (!hasDatabase()) {
       const storage = archiveOnly() ? "archive-seed" : "curated-only";
-      const count = archiveOnly() ? orderedStaticReferences().length : 1;
+      const count = 1;
       return {
         status: "ok",
         value: {
@@ -277,7 +280,7 @@ const loadPublicMessageSitemapPlan = cache(
                 coalesce(bool_or(id = $1), false) AS includes_curated
            FROM artifactories_messages
           WHERE visibility = 'visible'`,
-        [archivistMessage.id],
+        [phaseOneArchiveRecord.id],
       );
       const databaseCount = Number(result.rows[0]?.count ?? "0");
       const includesCuratedRecord = Boolean(result.rows[0]?.includes_curated);
@@ -320,7 +323,7 @@ const loadPublicMessageRefs = cache(
       const references =
         plan.storage === "archive-seed"
           ? orderedStaticReferences()
-          : [{ id: archivistMessage.id, createdAt: archivistMessage.createdAt }];
+          : [{ id: phaseOneArchiveRecord.id, createdAt: phaseOneArchiveRecord.createdAt }];
       return {
         status: "ok",
         value: {
@@ -353,7 +356,12 @@ const loadPublicMessageRefs = cache(
           ORDER BY created_at DESC, id DESC
           OFFSET $3
           LIMIT $4`,
-        [archivistMessage.id, archivistMessage.createdAt, page * pageSize, pageSize],
+        [
+          phaseOneArchiveRecord.id,
+          phaseOneArchiveRecord.createdAt,
+          page * pageSize,
+          pageSize,
+        ],
       );
       const messages = result.rows.map((message) => ({
         id: message.id,

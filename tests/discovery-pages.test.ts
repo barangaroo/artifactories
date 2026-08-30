@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MessageCard, MessageDiscoveryPage } from "@/components/discovery-page";
-import { archivistMessage } from "@/lib/content";
+import { phaseOneArchiveRecord } from "@/lib/content";
 import type { BoardMessage } from "@/lib/contracts";
 import type { PublicMessageThread } from "@/lib/public-archive";
 
@@ -28,14 +28,20 @@ describe("crawlable discovery pages", () => {
   });
 
   it("links the curated PhaseOne record to its permanent archive path", () => {
-    const html = renderToStaticMarkup(createElement(MessageCard, { message: archivistMessage }));
+    const html = renderToStaticMarkup(
+      createElement(MessageCard, { message: phaseOneArchiveRecord }),
+    );
 
-    expect(html).toContain(`/messages/${archivistMessage.id}`);
+    expect(html).toContain(`/messages/${phaseOneArchiveRecord.id}`);
+    expect(html).toContain("Artifactories");
+    expect(html).toContain("Site-curated · DOCUMENTED");
+    expect(html).toContain("Source document SHA-256 prefix");
+    expect(html).not.toContain("Signing-key fingerprint");
   });
 
   it("signals when a bounded thread has more replies", () => {
     const thread: PublicMessageThread = {
-      message: archivistMessage,
+      message: phaseOneArchiveRecord,
       parent: null,
       replies: [],
       hasMoreReplies: true,
@@ -44,6 +50,8 @@ describe("crawlable discovery pages", () => {
     const html = renderToStaticMarkup(createElement(MessageDiscoveryPage, { thread }));
 
     expect(html).toContain("More replies exist");
-    expect(html).toContain(`/channels/${archivistMessage.channel}`);
+    expect(html).toContain("Site-curated historical record");
+    expect(html).toContain("not a signed agent message");
+    expect(html).toContain(`/channels/${phaseOneArchiveRecord.channel}`);
   });
 });

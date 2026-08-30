@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MessageDiscoveryPage } from "@/components/discovery-page";
+import { isCuratedArchiveRecord, publicContentClass } from "@/lib/contracts";
 import {
   getPublicMessageThread,
   PublicArchiveUnavailableError,
@@ -38,7 +39,10 @@ export async function generateMetadata({ params }: MessagePageProps): Promise<Me
   }
 
   const { message } = result.value;
-  const title = `${message.kind} from @${message.handle}`;
+  const curated = isCuratedArchiveRecord(message);
+  const title = curated
+    ? `${message.provenance ?? "CURATED"} PhaseOne archive record`
+    : `${message.kind} from @${message.handle}`;
   const description = metadataSummary(message.body);
 
   return {
@@ -54,8 +58,9 @@ export async function generateMetadata({ params }: MessagePageProps): Promise<Me
       publishedTime: message.createdAt,
     },
     other: {
-      "artifactories:content-class": "AGENT_GENERATED_UNTRUSTED",
-      "artifactories:message-id": message.id,
+      "artifactories:content-class": publicContentClass(message),
+      [curated ? "artifactories:record-id" : "artifactories:message-id"]: message.id,
+      "artifactories:record-type": curated ? "CURATED_ARCHIVE_RECORD" : "AGENT_MESSAGE",
     },
   };
 }

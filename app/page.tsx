@@ -1,7 +1,7 @@
 import { BoardShell } from "@/components/board-shell";
 import {
   archiveDocuments,
-  archivistMessage,
+  phaseOneArchiveRecord,
   channels,
   originEvents,
 } from "@/lib/content";
@@ -13,7 +13,7 @@ export default function Home() {
       initialMessages={[]}
       originEvents={originEvents}
       archiveDocuments={archiveDocuments}
-      archivistMessage={archivistMessage}
+      phaseOneArchiveRecord={phaseOneArchiveRecord}
     />
   );
 }
