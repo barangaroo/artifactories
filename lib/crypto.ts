@@ -1,5 +1,6 @@
 import {
   createHash,
+  createHmac,
   createPublicKey,
   randomBytes,
   timingSafeEqual,
@@ -7,6 +8,17 @@ import {
 } from "node:crypto";
 
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+const challengeIdPattern = /^chl_[A-Za-z0-9_-]{24}$/;
+const handlePattern = /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
+
+export interface ChallengeTokenClaims {
+  challengeId: string;
+  random: string;
+  handle: string;
+  publicKey: string;
+  difficultyBits: number;
+  expiresAt: string;
+}
 
 export function fromBase64Url(value: string): Buffer {
   if (!/^[A-Za-z0-9_-]+$/.test(value)) {
@@ -126,4 +138,104 @@ export function safeEqual(left: string, right: string): boolean {
   const a = Buffer.from(left);
   const b = Buffer.from(right);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function hmacBase64Url(secret: string, domain: string, value: string): string {
+  return createHmac("sha256", secret).update(`${domain}\n${value}`).digest("base64url");
+}
+
+export function createChallengeToken(
+  secret: string,
+  claims: ChallengeTokenClaims,
+): string {
+  const encoded = Buffer.from(
+    JSON.stringify({
+      v: 1,
+      id: claims.challengeId,
+      r: claims.random,
+      h: claims.handle,
+      k: claims.publicKey,
+      d: claims.difficultyBits,
+      e: claims.expiresAt,
+    }),
+    "utf8",
+  ).toString("base64url");
+  return `${encoded}.${hmacBase64Url(secret, "artifactories-challenge-token-v1", encoded)}`;
+}
+
+export function readChallengeToken(
+  secret: string,
+  token: string,
+): ChallengeTokenClaims | null {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [encoded, signature] = parts;
+  if (
+    !isCanonicalBase64Url(encoded) ||
+    !isCanonicalBase64Url(signature, 32) ||
+    !safeEqual(
+      signature,
+      hmacBase64Url(secret, "artifactories-challenge-token-v1", encoded),
+    )
+  ) {
+    return null;
+  }
+  try {
+    const value = JSON.parse(fromBase64Url(encoded).toString("utf8")) as Record<
+      string,
+      unknown
+    >;
+    if (
+      value.v !== 1 ||
+      typeof value.id !== "string" ||
+      !challengeIdPattern.test(value.id) ||
+      typeof value.r !== "string" ||
+      !isCanonicalBase64Url(value.r, 24) ||
+      typeof value.h !== "string" ||
+      !handlePattern.test(value.h) ||
+      typeof value.k !== "string" ||
+      !isCanonicalBase64Url(value.k, 32) ||
+      typeof value.d !== "number" ||
+      !Number.isInteger(value.d) ||
+      value.d < 1 ||
+      value.d > 30 ||
+      typeof value.e !== "string" ||
+      new Date(value.e).toISOString() !== value.e
+    ) {
+      return null;
+    }
+    return {
+      challengeId: value.id,
+      random: value.r,
+      handle: value.h,
+      publicKey: value.k,
+      difficultyBits: value.d,
+      expiresAt: value.e,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function agentProofPayload(agentId: string, publicKey: string): string {
+  return [`agent_id:${agentId}`, `public_key:${publicKey}`].join("\n");
+}
+
+export function createAgentProof(secret: string, agentId: string, publicKey: string): string {
+  return `v1.${hmacBase64Url(
+    secret,
+    "artifactories-agent-proof-v1",
+    agentProofPayload(agentId, publicKey),
+  )}`;
+}
+
+export function verifyAgentProof(
+  secrets: string | readonly string[],
+  agentId: string,
+  publicKey: string,
+  proof: string,
+): boolean {
+  if (!/^v1\.[A-Za-z0-9_-]{43}$/.test(proof)) return false;
+  const candidates = typeof secrets === "string" ? [secrets] : secrets;
+  return candidates.some((secret) => safeEqual(proof, createAgentProof(secret, agentId, publicKey)));
 }

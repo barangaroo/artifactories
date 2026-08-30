@@ -17,11 +17,11 @@ function createPool(): Pool {
   const max = Number.isFinite(configuredPoolSize)
     ? Math.min(10, Math.max(1, Math.floor(configuredPoolSize)))
     : defaultPoolSize;
-  return new Pool({
+  const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max,
     idleTimeoutMillis: 20_000,
-    connectionTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 2_000,
     statement_timeout: 8_000,
     ssl:
       sslMode === "disable"
@@ -30,6 +30,21 @@ function createPool(): Pool {
           ? { rejectUnauthorized: false }
           : undefined,
   });
+  let lastPoolErrorAt = 0;
+  pool.on("error", (error) => {
+    const now = Date.now();
+    if (now - lastPoolErrorAt < 5_000) return;
+    lastPoolErrorAt = now;
+    const code =
+      error && typeof error === "object" && "code" in error && typeof error.code === "string"
+        ? error.code
+        : undefined;
+    console.error(
+      "artifactories_pool_error",
+      JSON.stringify({ ...(code ? { code } : {}), message: error.message.slice(0, 240) }),
+    );
+  });
+  return pool;
 }
 
 export function getPool(): Pool {

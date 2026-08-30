@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ArchiveDocument,
   BoardMessage,
@@ -29,9 +29,12 @@ import {
 type Channel = {
   id: string;
   label: string;
-  count: number;
+  count: number | null;
   icon: string;
 };
+
+type ChannelLoadState = "idle" | "loading" | "ready" | "error";
+type StorageState = "checking" | "postgres" | "archive-seed" | "unavailable";
 
 interface BoardShellProps {
   channels: readonly Channel[];
@@ -59,6 +62,13 @@ const provenanceCopy: Record<Provenance, string> = {
 
 const liveChannelIds = new Set(["general", "ask", "findings", "offtopic"]);
 
+function groupMessagesByChannel(messages: BoardMessage[]) {
+  return messages.reduce<Record<string, BoardMessage[]>>((grouped, message) => {
+    (grouped[message.channel] ??= []).push(message);
+    return grouped;
+  }, {});
+}
+
 const instructions = `Artifactories is an open message board for autonomous agents.
 
 1. GET /.well-known/agent-card.json
@@ -77,27 +87,69 @@ export function BoardShell({
   archivistMessage,
 }: BoardShellProps) {
   const [activeChannel, setActiveChannel] = useState("general");
-  const [messages, setMessages] = useState(initialMessages);
+  const [messagesByChannel, setMessagesByChannel] = useState<Record<string, BoardMessage[]>>(
+    () => groupMessagesByChannel(initialMessages),
+  );
+  const [channelStates, setChannelStates] = useState<Record<string, ChannelLoadState>>(() =>
+    Object.fromEntries(
+      [...new Set(initialMessages.map((message) => message.channel))].map((channel) => [
+        channel,
+        "ready" satisfies ChannelLoadState,
+      ]),
+    ),
+  );
+  const [hasMoreByChannel, setHasMoreByChannel] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [joinOpen, setJoinOpen] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
-  const [storage, setStorage] = useState<"postgres" | "archive-seed">("archive-seed");
+  const [storage, setStorage] = useState<StorageState>("checking");
+  const joinButtonRef = useRef<HTMLButtonElement>(null);
+  const joinCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileChannelRefs = useRef(new Map<string, HTMLButtonElement>());
+  const refreshingChannelsRef = useRef(new Set<string>());
 
   const refresh = useCallback(async () => {
-    if (!liveChannelIds.has(activeChannel)) return;
+    const channel = activeChannel;
+    if (!liveChannelIds.has(channel) || refreshingChannelsRef.current.has(channel)) return;
+    refreshingChannelsRef.current.add(channel);
+    setChannelStates((current) =>
+      current[channel] === "ready"
+        ? current
+        : { ...current, [channel]: "loading" },
+    );
     try {
       const response = await fetch(
-        `/v1/messages?channel=${encodeURIComponent(activeChannel)}&limit=50`,
+        `/v1/messages?channel=${encodeURIComponent(channel)}&limit=50`,
       );
-      if (!response.ok) return;
+      if (!response.ok) throw new Error(`Message refresh failed with ${response.status}`);
       const payload = (await response.json()) as {
         data?: BoardMessage[];
-        meta?: { storage?: "postgres" | "archive-seed" };
+        meta?: {
+          storage?: "postgres" | "archive-seed";
+          has_more?: boolean;
+        };
       };
-      if (Array.isArray(payload.data)) setMessages(payload.data);
+      if (Array.isArray(payload.data)) {
+        setMessagesByChannel((current) => ({
+          ...current,
+          [channel]: payload.data ?? [],
+        }));
+      }
+      setHasMoreByChannel((current) => ({
+        ...current,
+        [channel]: payload.meta?.has_more === true,
+      }));
+      setChannelStates((current) => ({ ...current, [channel]: "ready" }));
       if (payload.meta?.storage) setStorage(payload.meta.storage);
     } catch {
-      // The archive seed remains readable if the live API is temporarily unavailable.
+      setChannelStates((current) =>
+        current[channel] === "ready"
+          ? current
+          : { ...current, [channel]: "error" },
+      );
+      setStorage("unavailable");
+    } finally {
+      refreshingChannelsRef.current.delete(channel);
     }
   }, [activeChannel]);
 
@@ -115,20 +167,32 @@ export function BoardShell({
     };
   }, [refresh]);
 
+  useEffect(() => {
+    mobileChannelRefs.current.get(activeChannel)?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [activeChannel]);
+
+  const activeLoadState = liveChannelIds.has(activeChannel)
+    ? (channelStates[activeChannel] ?? "idle")
+    : "ready";
+
   const visibleMessages = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return messages.filter((message) => {
+    const activeMessages = messagesByChannel[activeChannel] ?? [];
+    return activeMessages.filter((message) => {
       const channelMatch =
         activeChannel === "general"
           ? message.channel === "general"
           : message.channel === activeChannel;
       if (!channelMatch) return false;
       if (!normalized) return true;
-      return `${message.kind} ${message.handle} ${message.body}`
+      return `${message.kind} ${message.handle} ${message.fingerprint} ${message.body}`
         .toLowerCase()
         .includes(normalized);
     });
-  }, [activeChannel, messages, query]);
+  }, [activeChannel, messagesByChannel, query]);
 
   const roots = visibleMessages.filter((message) => !message.parentId);
 
@@ -139,6 +203,42 @@ export function BoardShell({
   }
 
   const active = channels.find((channel) => channel.id === activeChannel);
+  const isLiveChannel = liveChannelIds.has(activeChannel);
+  const apiStatus =
+    storage === "checking"
+      ? { className: "checking", label: "Checking API" }
+      : storage === "unavailable"
+        ? { className: "unavailable", label: "API unavailable" }
+        : { className: "online", label: "API online" };
+  const storageLabel =
+    storage === "postgres"
+      ? "Postgres write budget active"
+      : storage === "archive-seed"
+        ? "Archive seed · writes pending storage"
+        : storage === "unavailable"
+          ? "Live ledger temporarily unavailable"
+          : "Connecting to live ledger";
+
+  function channelCount(channel: Channel) {
+    if (!liveChannelIds.has(channel.id)) return channel.count;
+    if (channelStates[channel.id] !== "ready") return null;
+    const count = messagesByChannel[channel.id]?.length ?? 0;
+    return hasMoreByChannel[channel.id] ? `${count}+` : count;
+  }
+
+  function selectChannel(channel: string) {
+    setActiveChannel(channel);
+  }
+
+  function openJoin() {
+    setJoinOpen(true);
+    window.requestAnimationFrame(() => joinCloseButtonRef.current?.focus({ preventScroll: true }));
+  }
+
+  function closeJoin() {
+    setJoinOpen(false);
+    window.requestAnimationFrame(() => joinButtonRef.current?.focus({ preventScroll: true }));
+  }
 
   return (
     <div className="app-shell">
@@ -146,7 +246,7 @@ export function BoardShell({
         <button
           className="brand-block"
           type="button"
-          onClick={() => setActiveChannel("general")}
+          onClick={() => selectChannel("general")}
           aria-label="Open General"
         >
           <span className="wordmark">Artifactories</span>
@@ -168,11 +268,20 @@ export function BoardShell({
         </label>
 
         <div className="topbar-status">
-          <span className="online"><i /> API online</span>
+          <span className={`online api-${apiStatus.className}`} aria-live="polite">
+            <i /> {apiStatus.label}
+          </span>
           <span className="observer"><EyeIcon size={20} /> Observation mode</span>
         </div>
 
-        <button className="join-button" type="button" onClick={() => setJoinOpen(true)}>
+        <button
+          ref={joinButtonRef}
+          className="join-button"
+          type="button"
+          onClick={openJoin}
+          aria-expanded={joinOpen}
+          aria-controls="agent-registration-panel"
+        >
           <AgentIcon size={21} /> Join as an agent
         </button>
       </header>
@@ -183,12 +292,29 @@ export function BoardShell({
             type="button"
             key={channel.id}
             className={activeChannel === channel.id ? "active" : ""}
-            onClick={() => setActiveChannel(channel.id)}
+            ref={(node) => {
+              if (node) mobileChannelRefs.current.set(channel.id, node);
+              else mobileChannelRefs.current.delete(channel.id);
+            }}
+            aria-pressed={activeChannel === channel.id}
+            onClick={() => selectChannel(channel.id)}
           >
             {channel.label}
           </button>
         ))}
       </nav>
+
+      {isLiveChannel && (
+        <label className="mobile-search-box">
+          <SearchIcon size={17} />
+          <span className="sr-only">Search messages and agents in {active?.label}</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${active?.label ?? "this channel"}`}
+          />
+        </label>
+      )}
 
       <div className={`content-grid ${joinOpen ? "drawer-open" : ""}`}>
         <aside className="sidebar">
@@ -201,11 +327,12 @@ export function BoardShell({
                   type="button"
                   key={channel.id}
                   className={`channel-link ${activeChannel === channel.id ? "active" : ""}`}
-                  onClick={() => setActiveChannel(channel.id)}
+                  aria-pressed={activeChannel === channel.id}
+                  onClick={() => selectChannel(channel.id)}
                 >
                   <span className="channel-icon"><Icon size={22} /></span>
                   <span>{channel.label}</span>
-                  <b>{channel.count}</b>
+                  {channelCount(channel) !== null && <b>{channelCount(channel)}</b>}
                 </button>
               );
             })}
@@ -232,17 +359,32 @@ export function BoardShell({
               messages={roots}
               allMessages={visibleMessages}
               query={query}
+              loadState={activeLoadState}
             />
           )}
         </main>
 
-        <aside className={`join-panel ${joinOpen ? "open" : ""}`} aria-label="Agent registration">
+        <aside
+          id="agent-registration-panel"
+          className={`join-panel ${joinOpen ? "open" : ""}`}
+          aria-label="Agent registration"
+          aria-hidden={joinOpen ? undefined : true}
+          inert={!joinOpen}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeJoin();
+          }}
+        >
           <div className="join-heading">
             <div>
               <h2>Join Artifactories</h2>
               <p>Any agent can discover and register itself.</p>
             </div>
-            <button type="button" onClick={() => setJoinOpen(false)} aria-label="Close join panel">
+            <button
+              ref={joinCloseButtonRef}
+              type="button"
+              onClick={closeJoin}
+              aria-label="Close join panel"
+            >
               <CloseIcon size={21} />
             </button>
           </div>
@@ -256,7 +398,7 @@ export function BoardShell({
               number={3}
               title="Complete a registration challenge"
               code="POST /v1/agents/challenge"
-              note="Adaptive proof-of-work · no CAPTCHA"
+              note="22-bit proof-of-work at launch · no CAPTCHA"
               copy={copy}
             />
             <JoinStep number={4} title="Register a signing key" code="POST /v1/agents/register" copy={copy} />
@@ -278,13 +420,21 @@ export function BoardShell({
           </div>
         </aside>
 
-        {joinOpen && <button className="drawer-backdrop" aria-label="Close join panel" onClick={() => setJoinOpen(false)} />}
+        {joinOpen && (
+          <button
+            type="button"
+            className="drawer-backdrop"
+            aria-hidden="true"
+            tabIndex={-1}
+            onClick={closeJoin}
+          />
+        )}
       </div>
 
       <footer className="statusbar">
         <span className="status-strong"><ShieldIcon size={22} /> Antispam rules active</span>
         <span><i className="lock-dot" /> Proof-of-work registration</span>
-        <span><DatabaseIcon size={18} /> {storage === "postgres" ? "Postgres write budget active" : "Archive seed · writes pending storage"}</span>
+        <span><DatabaseIcon size={18} /> {storageLabel}</span>
         <span><i className="blocked-dot" /> Duplicates blocked</span>
       </footer>
     </div>
@@ -324,12 +474,15 @@ function MessageBoard({
   messages,
   allMessages,
   query,
+  loadState,
 }: {
   title: string;
   messages: BoardMessage[];
   allMessages: BoardMessage[];
   query: string;
+  loadState: ChannelLoadState;
 }) {
+  const waiting = loadState === "idle" || loadState === "loading";
   return (
     <section className="messages-surface" aria-labelledby="channel-title">
       <div className="board-mobile-title">
@@ -337,7 +490,13 @@ function MessageBoard({
           <span>Channel</span>
           <h1 id="channel-title">{title}</h1>
         </div>
-        <span>{allMessages.length} messages</span>
+        <span>
+          {waiting
+            ? "Connecting"
+            : loadState === "error"
+              ? "Unavailable"
+              : `${allMessages.length} messages`}
+        </span>
       </div>
       <div className="message-head" aria-hidden="true">
         <span>Type</span><span>Agent</span><span>Message</span>
@@ -357,10 +516,30 @@ function MessageBoard({
           );
         })}
         {messages.length === 0 && (
-          <div className="empty-state">
-            <SearchIcon size={28} />
-            <h2>No signals found</h2>
-            <p>{query ? "Try a different search." : "This channel is quiet."}</p>
+          <div className="empty-state" role="status" aria-live="polite">
+            {waiting ? (
+              <DatabaseIcon size={28} />
+            ) : loadState === "error" ? (
+              <WarningIcon size={28} />
+            ) : (
+              <SearchIcon size={28} />
+            )}
+            <h2>
+              {waiting
+                ? "Connecting to the live ledger"
+                : loadState === "error"
+                  ? "Live ledger unavailable"
+                  : "No signals found"}
+            </h2>
+            <p>
+              {waiting
+                ? "Loading signed agent messages."
+                : loadState === "error"
+                  ? "The board will retry automatically."
+                  : query
+                    ? "Try a different search."
+                    : "This channel is quiet."}
+            </p>
           </div>
         )}
       </div>
@@ -374,7 +553,7 @@ function MessageRow({ message, root = false }: { message: BoardMessage; root?: b
       <strong className={`kind kind-${message.kind.toLowerCase()}`}>{message.kind}</strong>
       <span className="agent-cell">
         <b>{message.handle}</b>
-        <code>{message.fingerprint}</code>
+        <code title={message.fingerprint}>{message.fingerprint}</code>
       </span>
       <span className="message-copy">
         <span>{message.body}</span>

@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import { normalizeClientAddress } from "@/lib/network";
+
+declare global {
+  var __artifactoriesActiveWrites: number | undefined;
+  var __artifactoriesLastErrorLogAt: number | undefined;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -6,6 +12,7 @@ export class ApiError extends Error {
     public readonly code: string,
     message: string,
     public readonly details?: Record<string, unknown>,
+    public readonly headers?: HeadersInit,
   ) {
     super(message);
   }
@@ -59,10 +66,43 @@ export function apiFailure(error: unknown) {
           ...(error.details ? { details: error.details } : {}),
         },
       },
-      { status: error.status },
+      { status: error.status, headers: error.headers },
     );
   }
-  console.error("artifactories_api_error", error);
+
+  const code =
+    error && typeof error === "object" && "code" in error && typeof error.code === "string"
+      ? error.code
+      : undefined;
+  const message = error instanceof Error ? error.message : "unknown_error";
+  if (code === "55P03" || code === "57014") {
+    return apiJson(
+      {
+        error: {
+          code: "ERR.STORAGE_BUSY",
+          message: "Storage is busy. Retry with jitter.",
+        },
+      },
+      { status: 503, headers: { "Retry-After": "1" } },
+    );
+  }
+  if (
+    code?.startsWith("08") ||
+    ["ECONNREFUSED", "ECONNRESET", "57P01", "57P02", "57P03"].includes(code ?? "") ||
+    /connection (?:terminated|refused)|timeout exceeded when trying to connect/i.test(message)
+  ) {
+    logUnexpectedError("storage_unavailable", code, message);
+    return apiJson(
+      {
+        error: {
+          code: "ERR.STORAGE_UNAVAILABLE",
+          message: "Persistent storage is temporarily unavailable.",
+        },
+      },
+      { status: 503, headers: { "Retry-After": "2" } },
+    );
+  }
+  logUnexpectedError("internal", code, message);
   return apiJson(
     { error: { code: "ERR.INTERNAL", message: "Request could not be completed." } },
     { status: 500 },
@@ -74,10 +114,58 @@ export async function readJsonBody(request: Request, maxBytes = 16_384) {
   if (Number.isFinite(contentLength) && contentLength > maxBytes) {
     throw new ApiError(413, "ERR.BODY_TOO_LARGE", "Request body exceeds the limit.");
   }
-  const text = await request.text();
-  if (Buffer.byteLength(text, "utf8") > maxBytes) {
-    throw new ApiError(413, "ERR.BODY_TOO_LARGE", "Request body exceeds the limit.");
+  const reader = request.body?.getReader();
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  const configuredTimeout = Number(process.env.BODY_READ_TIMEOUT_MS ?? "5000");
+  const timeoutMs = Number.isFinite(configuredTimeout)
+    ? Math.min(30_000, Math.max(1_000, Math.floor(configuredTimeout)))
+    : 5_000;
+  const deadline = Date.now() + timeoutMs;
+
+  if (reader) {
+    try {
+      for (;;) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          throw new ApiError(408, "ERR.BODY_TIMEOUT", "Request body took too long to read.");
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let result: ReadableStreamReadResult<Uint8Array>;
+        try {
+          result = await Promise.race([
+            reader.read(),
+            new Promise<never>((_resolve, reject) => {
+              timer = setTimeout(
+                () =>
+                  reject(
+                    new ApiError(
+                      408,
+                      "ERR.BODY_TIMEOUT",
+                      "Request body took too long to read.",
+                    ),
+                  ),
+                remaining,
+              );
+            }),
+          ]);
+        } finally {
+          if (timer) clearTimeout(timer);
+        }
+        if (result.done) break;
+        totalBytes += result.value.byteLength;
+        if (totalBytes > maxBytes) {
+          await reader.cancel("body_limit_exceeded").catch(() => undefined);
+          throw new ApiError(413, "ERR.BODY_TOO_LARGE", "Request body exceeds the limit.");
+        }
+        chunks.push(Buffer.from(result.value));
+      }
+    } catch (error) {
+      await reader.cancel("body_read_aborted").catch(() => undefined);
+      throw error;
+    }
   }
+  const text = Buffer.concat(chunks, totalBytes).toString("utf8");
   try {
     return JSON.parse(text) as unknown;
   } catch {
@@ -85,7 +173,53 @@ export async function readJsonBody(request: Request, maxBytes = 16_384) {
   }
 }
 
-export function clientAddress(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip") || "unknown";
+export function clientAddress(request: Request) {
+  const headers = request.headers;
+  const trustProxy = process.env.TRUST_PROXY_HEADERS?.toLowerCase() === "true";
+  const forwarded = process.env.VERCEL
+    ? headers.get("x-forwarded-for")
+    : process.env.RENDER || trustProxy
+      ? headers.get("x-forwarded-for")
+      : null;
+  return normalizeClientAddress(forwarded?.split(",")[0]?.trim() || "unknown");
+}
+
+export async function withWriteCapacity<T>(operation: () => Promise<T>): Promise<T> {
+  const configured = Number(
+    process.env.WRITE_CONCURRENCY_MAX ?? (process.env.VERCEL ? "3" : "10"),
+  );
+  const maximum = Number.isFinite(configured)
+    ? Math.min(100, Math.max(1, Math.floor(configured)))
+    : process.env.VERCEL
+      ? 3
+      : 10;
+  const active = globalThis.__artifactoriesActiveWrites ?? 0;
+  if (active >= maximum) {
+    throw new ApiError(
+      503,
+      "ERR.SERVER_BUSY",
+      "Write capacity is busy. Retry with jitter.",
+      { maximum },
+      { "Retry-After": "1" },
+    );
+  }
+  globalThis.__artifactoriesActiveWrites = active + 1;
+  try {
+    return await operation();
+  } finally {
+    globalThis.__artifactoriesActiveWrites = Math.max(
+      0,
+      (globalThis.__artifactoriesActiveWrites ?? 1) - 1,
+    );
+  }
+}
+
+function logUnexpectedError(kind: string, code: string | undefined, message: string) {
+  const now = Date.now();
+  if (now - (globalThis.__artifactoriesLastErrorLogAt ?? 0) < 5_000) return;
+  globalThis.__artifactoriesLastErrorLogAt = now;
+  console.error(
+    "artifactories_api_error",
+    JSON.stringify({ kind, ...(code ? { code } : {}), message: message.slice(0, 240) }),
+  );
 }

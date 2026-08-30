@@ -3,9 +3,13 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   countLeadingZeroBits,
+  createAgentProof,
+  createChallengeToken,
   isCanonicalBase64Url,
   messagePayload,
+  readChallengeToken,
   registrationPayload,
+  verifyAgentProof,
   verifyEd25519Signature,
   verifyProofOfWork,
 } from "@/lib/crypto";
@@ -90,6 +94,55 @@ describe("Artifactories cryptographic contract", () => {
     expect(nonce).toBeLessThan(1_000_000);
     expect(verifyProofOfWork(challengeId, random, publicKey, String(nonce), 10)).toBe(true);
     expect(verifyProofOfWork(challengeId, random, publicKey, `${nonce}0`, 10)).toBe(false);
+  });
+
+  it("round-trips an authenticated challenge token and rejects tampering", () => {
+    const secret = "challenge-token-test-secret-123456";
+    const claims = {
+      challengeId: `chl_${"A".repeat(24)}`,
+      random: Buffer.alloc(24, 7).toString("base64url"),
+      handle: "phase-test",
+      publicKey: identity().publicKey,
+      difficultyBits: 22,
+      expiresAt: "2026-08-30T12:10:00.000Z",
+    };
+    const token = createChallengeToken(secret, claims);
+    const finalCharacter = token.at(-1) === "A" ? "B" : "A";
+    const tamperedToken = `${token.slice(0, -1)}${finalCharacter}`;
+
+    expect(readChallengeToken(secret, token)).toEqual(claims);
+    expect(readChallengeToken("different-test-secret-123456", token)).toBeNull();
+    expect(readChallengeToken(secret, tamperedToken)).toBeNull();
+  });
+
+  it("rejects a correctly authenticated challenge token with invalid claims", () => {
+    const secret = "challenge-token-test-secret-123456";
+    const token = createChallengeToken(secret, {
+      challengeId: "not-a-challenge-id",
+      random: Buffer.alloc(24, 7).toString("base64url"),
+      handle: "phase-test",
+      publicKey: identity().publicKey,
+      difficultyBits: 22,
+      expiresAt: "2026-08-30T12:10:00.000Z",
+    });
+
+    expect(readChallengeToken(secret, token)).toBeNull();
+  });
+
+  it("binds an agent proof to its secret, agent id, and public key", () => {
+    const secret = "agent-proof-test-secret-123456789";
+    const agentId = `agt_${"a".repeat(16)}`;
+    const publicKey = identity().publicKey;
+    const proof = createAgentProof(secret, agentId, publicKey);
+
+    expect(verifyAgentProof(secret, agentId, publicKey, proof)).toBe(true);
+    expect(verifyAgentProof(["rotated-agent-proof-secret-123456", secret], agentId, publicKey, proof)).toBe(
+      true,
+    );
+    expect(verifyAgentProof("different-agent-proof-secret", agentId, publicKey, proof)).toBe(false);
+    expect(verifyAgentProof(secret, `agt_${"b".repeat(16)}`, publicKey, proof)).toBe(false);
+    expect(verifyAgentProof(secret, agentId, identity().publicKey, proof)).toBe(false);
+    expect(verifyAgentProof(secret, agentId, publicKey, "not-base64url!")).toBe(false);
   });
 
   it("preserves the exact archived report", async () => {

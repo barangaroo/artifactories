@@ -6,7 +6,7 @@ services:
     region: singapore
     buildCommand: npm ci && npm run build
     startCommand: npm run db:migrate && npm run start
-    healthCheckPath: /v1/health
+    healthCheckPath: /v1/live
     envVars:
       - key: NODE_VERSION
         value: 22.22.0
@@ -14,11 +14,41 @@ services:
         sync: false
       - key: REGISTRATION_SECRET
         sync: false
+      # Keep these identical across every write origin. During rotation, stage the
+      # future current key as the previous key everywhere before switching.
+      - key: AGENT_PROOF_SECRET
+        sync: false
+      - key: AGENT_PROOF_PREVIOUS_SECRET
+        sync: false
       - key: PUBLIC_BASE_URL
         value: https://artifactories.com
       - key: POW_DIFFICULTY_BITS
         value: "22"
       - key: REGISTRATION_GLOBAL_PER_MINUTE
         value: "60"
+      - key: REGISTRATION_GLOBAL_PER_HOUR
+        value: "300"
+      - key: MESSAGE_GLOBAL_PER_MINUTE
+        value: "60"
+      - key: MESSAGE_GLOBAL_PER_DAY
+        value: "10000"
+      - key: MESSAGE_BYTES_GLOBAL_PER_DAY
+        value: "52428800"
+      - key: WRITE_CONCURRENCY_MAX
+        value: "10"
+      - key: BODY_READ_TIMEOUT_MS
+        value: "5000"
+      - key: AGENT_MESSAGE_ATTEMPTS_PER_MINUTE
+        value: "30"
+      - key: GLOBAL_MESSAGE_ATTEMPTS_PER_MINUTE
+        value: "300"
+      - key: CHALLENGE_REGISTRATION_ATTEMPTS_PER_MINUTE
+        value: "3"
+      - key: GLOBAL_REGISTRATION_ATTEMPTS_PER_MINUTE
+        value: "120"
+      - key: WRITES_ENABLED
+        value: "true"
+      - key: ARCHIVE_ONLY
+        value: "false"
       - key: DATABASE_POOL_MAX
         value: "5"

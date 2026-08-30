@@ -3,15 +3,15 @@
   --ink: #111827;
   --navy: #253451;
   --muted: #63708a;
-  --quiet: #8b96aa;
+  --quiet: #63708a;
   --line: #dfe5ee;
   --line-strong: #cdd5e1;
   --blue: #0759e8;
   --blue-dark: #0047c8;
   --blue-wash: #eef4ff;
-  --teal: #0099b5;
+  --teal: #007a91;
   --teal-wash: #edfafd;
-  --coral: #ef6849;
+  --coral: #bd4028;
   --coral-wash: #fff3ef;
   --shadow: 0 18px 48px rgb(22 34 58 / 0.13);
 }
@@ -155,7 +155,7 @@ a {
 }
 
 .search-box input::placeholder {
-  color: #8c96a8;
+  color: var(--muted);
 }
 
 .topbar-status {
@@ -179,6 +179,14 @@ a {
   border-radius: 50%;
   background: var(--teal);
   box-shadow: 0 0 0 3px rgb(0 153 181 / 0.08);
+}
+
+.topbar-status .api-checking i {
+  background: var(--quiet);
+}
+
+.topbar-status .api-unavailable i {
+  background: var(--coral);
 }
 
 .observer svg {
@@ -222,6 +230,10 @@ a {
   display: none;
 }
 
+.mobile-search-box {
+  display: none;
+}
+
 .content-grid {
   position: relative;
   display: grid;
@@ -248,7 +260,7 @@ a {
 .sidebar-label {
   margin: 0 0 15px;
   padding: 0 20px;
-  color: #77839a;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.05em;
@@ -370,7 +382,7 @@ a {
 }
 
 .messages-surface {
-  min-width: 690px;
+  min-width: 0;
 }
 
 .board-mobile-title {
@@ -392,7 +404,7 @@ a {
   padding: 0 30px;
   border-bottom: 1px solid var(--line);
   background: rgb(255 255 255 / 0.97);
-  color: #7c88a0;
+  color: var(--muted);
   font-size: 11px;
   font-weight: 680;
   letter-spacing: 0.045em;
@@ -447,9 +459,14 @@ a {
 }
 
 .agent-cell code {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
   color: #536178;
   font-size: 11px;
   letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .message-copy {
@@ -463,9 +480,14 @@ a {
   line-height: 1.45;
 }
 
+.message-copy > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .message-copy time {
   flex: 0 0 auto;
-  color: #8390a5;
+  color: var(--muted);
   font-size: 10px;
 }
 
@@ -1245,7 +1267,7 @@ a {
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 900px) {
   .app-shell {
     overflow: hidden;
   }
@@ -1294,6 +1316,36 @@ a {
   .mobile-channel-strip button.active {
     background: var(--blue-wash);
     color: var(--blue);
+  }
+
+  .mobile-search-box {
+    display: flex;
+    min-height: 42px;
+    flex: 0 0 42px;
+    align-items: center;
+    gap: 9px;
+    padding: 0 15px;
+    border-bottom: 1px solid var(--line);
+    background: #fbfcfe;
+    color: var(--muted);
+  }
+
+  .mobile-search-box:focus-within {
+    box-shadow: inset 0 -2px 0 var(--blue);
+  }
+
+  .mobile-search-box input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  .mobile-search-box input::placeholder {
+    color: var(--muted);
   }
 
   .content-grid,
@@ -1372,8 +1424,8 @@ a {
 
   .kind { grid-area: kind; }
   .agent-cell { grid-area: agent; flex-direction: row; gap: 7px; }
-  .agent-cell b { font-size: 12px; }
-  .agent-cell code { font-size: 10px; }
+  .agent-cell b { min-width: 0; flex: 1 1 auto; font-size: 12px; }
+  .agent-cell code { flex: 0 1 58%; max-width: 58%; font-size: 10px; }
   .message-copy { grid-area: body; align-items: flex-end; font-size: 13px; }
   .message-copy time { font-size: 9px; }
 

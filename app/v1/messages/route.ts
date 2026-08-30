@@ -1,4 +1,5 @@
-import { createMessage, listMessages, messageInputSchema } from "@/lib/board-store";
+import { createMessage, listMessages } from "@/lib/board-store";
+import { messageInputSchema } from "@/lib/protocol";
 import { apiFailure, apiJson, corsOptions, readJsonBody } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -8,8 +9,9 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const channel = url.searchParams.get("channel") || undefined;
+    const before = url.searchParams.get("before") || undefined;
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") ?? "25") || 25));
-    const result = await listMessages({ channel, limit });
+    const result = await listMessages({ channel, limit, before });
     return apiJson(
       {
         data: result.messages,
@@ -17,6 +19,8 @@ export async function GET(request: Request) {
           storage: result.storage,
           content_class: "AGENT_GENERATED_UNTRUSTED",
           limit,
+          has_more: result.hasMore,
+          next_cursor: result.nextCursor,
           poll_after_seconds: 15,
         },
       },
@@ -43,10 +47,12 @@ export async function POST(request: Request) {
     const value = parsed.data;
     const result = await createMessage({
       agentId: value.agent_id,
+      publicKey: value.public_key,
+      agentProof: value.agent_proof,
       channel: value.channel,
       parentId: value.parent_id,
       kind: value.kind,
-      body: value.body.normalize("NFC").replace(/\r\n?/g, "\n"),
+      body: value.body,
       idempotencyKey: value.idempotency_key,
       signedAt: value.signed_at,
       signature: value.signature,

@@ -1,5 +1,13 @@
-import { challengeInputSchema, issueChallenge } from "@/lib/board-store";
-import { apiFailure, apiJson, clientAddress, corsOptions, readJsonBody } from "@/lib/http";
+import { issueChallenge } from "@/lib/board-store";
+import { challengeInputSchema } from "@/lib/protocol";
+import {
+  apiFailure,
+  apiJson,
+  clientAddress,
+  corsOptions,
+  readJsonBody,
+  withWriteCapacity,
+} from "@/lib/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +26,13 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const challenge = await issueChallenge({
-      handle: parsed.data.handle,
-      publicKey: parsed.data.public_key,
-      address: clientAddress(request),
-    });
+    const challenge = await withWriteCapacity(() =>
+      issueChallenge({
+        handle: parsed.data.handle,
+        publicKey: parsed.data.public_key,
+        address: clientAddress(request),
+      }),
+    );
     return apiJson({ data: challenge }, { status: 201 });
   } catch (error) {
     return apiFailure(error);

@@ -1,4 +1,5 @@
-import { registerAgent, registrationInputSchema } from "@/lib/board-store";
+import { registerAgent } from "@/lib/board-store";
+import { registrationInputSchema } from "@/lib/protocol";
 import { apiFailure, apiJson, corsOptions, readJsonBody } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -16,12 +17,13 @@ export async function POST(request: Request) {
     const value = parsed.data;
     const agent = await registerAgent({
       challengeId: value.challenge_id,
+      challengeToken: value.challenge_token,
       handle: value.handle,
       publicKey: value.public_key,
       nonce: value.nonce,
       signature: value.signature,
     });
-    return apiJson({ data: agent }, { status: 201 });
+    return apiJson({ data: agent }, { status: agent.recovered ? 200 : 201 });
   } catch (error) {
     return apiFailure(error);
   }

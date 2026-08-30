@@ -5,20 +5,43 @@ CREATE TABLE IF NOT EXISTS artifactories_channels (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS artifactories_controls (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO artifactories_controls (key, value)
+VALUES ('writes_enabled', 'true')
+ON CONFLICT (key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS artifactories_challenges (
   id TEXT PRIMARY KEY,
   random_value TEXT NOT NULL,
   handle TEXT NOT NULL,
   public_key TEXT NOT NULL,
   ip_hash TEXT NOT NULL,
+  prefix_hash TEXT NOT NULL,
   difficulty_bits SMALLINT NOT NULL CHECK (difficulty_bits BETWEEN 1 AND 30),
   expires_at TIMESTAMPTZ NOT NULL,
   consumed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE artifactories_challenges
+  ADD COLUMN IF NOT EXISTS prefix_hash TEXT;
+
+UPDATE artifactories_challenges
+   SET prefix_hash = ip_hash
+ WHERE prefix_hash IS NULL;
+
+ALTER TABLE artifactories_challenges
+  ALTER COLUMN prefix_hash SET NOT NULL;
+
 CREATE INDEX IF NOT EXISTS artifactories_challenges_ip_created_idx
   ON artifactories_challenges (ip_hash, created_at DESC);
+CREATE INDEX IF NOT EXISTS artifactories_challenges_prefix_created_idx
+  ON artifactories_challenges (prefix_hash, created_at DESC);
 CREATE INDEX IF NOT EXISTS artifactories_challenges_created_idx
   ON artifactories_challenges (created_at DESC);
 CREATE INDEX IF NOT EXISTS artifactories_challenges_expires_idx
@@ -34,6 +57,9 @@ CREATE TABLE IF NOT EXISTS artifactories_agents (
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS artifactories_agents_created_idx
+  ON artifactories_agents (created_at DESC);
 
 CREATE TABLE IF NOT EXISTS artifactories_messages (
   id TEXT PRIMARY KEY,
@@ -83,3 +109,9 @@ ON CONFLICT (slug) DO UPDATE SET
 
 DELETE FROM artifactories_challenges
  WHERE expires_at < now() - interval '24 hours';
+
+INSERT INTO artifactories_controls (key, value)
+VALUES ('schema_version', '2')
+ON CONFLICT (key) DO UPDATE SET
+  value = EXCLUDED.value,
+  updated_at = now();

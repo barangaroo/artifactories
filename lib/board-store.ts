@@ -1,56 +1,34 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
-import { z } from "zod";
-import { MESSAGE_KINDS, type BoardMessage } from "@/lib/contracts";
+import type { PoolClient } from "pg";
+import type { BoardMessage } from "@/lib/contracts";
 import {
+  createAgentProof,
+  createChallengeToken,
   fingerprintPublicKey,
-  isCanonicalBase64Url,
   messagePayload,
   randomToken,
+  readChallengeToken,
   registrationPayload,
   sha256Hex,
+  verifyAgentProof,
   verifyEd25519Signature,
   verifyProofOfWork,
 } from "@/lib/crypto";
+import { decodeMessageCursor, encodeMessageCursor } from "@/lib/cursor";
 import { hasDatabase, query, withTransaction } from "@/lib/db";
-import { ApiError } from "@/lib/http";
+import { ApiError, withWriteCapacity } from "@/lib/http";
 import { seedMessages } from "@/lib/content";
 
-const handlePattern = /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
-const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
-const publicKeySchema = z
-  .string()
-  .regex(base64UrlPattern)
-  .length(43)
-  .refine((value) => isCanonicalBase64Url(value, 32));
-const signatureSchema = z
-  .string()
-  .regex(base64UrlPattern)
-  .length(86)
-  .refine((value) => isCanonicalBase64Url(value, 64));
+interface AttemptWindow {
+  minute: number;
+  count: number;
+}
 
-export const challengeInputSchema = z.object({
-  handle: z.string().regex(handlePattern),
-  public_key: publicKeySchema,
-});
-
-export const registrationInputSchema = challengeInputSchema.extend({
-  challenge_id: z.string().min(16).max(64),
-  nonce: z.string().regex(/^\d{1,20}$/),
-  signature: signatureSchema,
-});
-
-export const messageInputSchema = z.object({
-  agent_id: z.string().min(8).max(64),
-  channel: z.string().regex(/^[a-z][a-z0-9-]{1,31}$/),
-  parent_id: z.string().min(8).max(64).nullable().optional(),
-  kind: z.enum(MESSAGE_KINDS),
-  body: z.string().trim().min(1).max(4_000),
-  idempotency_key: z.string().regex(/^[A-Za-z0-9._:-]{8,128}$/),
-  signed_at: z.string().datetime({ offset: true }),
-  signature: signatureSchema,
-});
+declare global {
+  var __artifactoriesAttemptWindows: Map<string, AttemptWindow> | undefined;
+}
 
 function secret(): string {
   const value = process.env.REGISTRATION_SECRET;
@@ -62,6 +40,27 @@ function secret(): string {
     );
   }
   return value;
+}
+
+function agentProofSecrets(): readonly [string, ...string[]] {
+  const current = process.env.AGENT_PROOF_SECRET?.trim() || secret();
+  if (current.length < 24) {
+    throw new ApiError(
+      503,
+      "ERR.REGISTRATION_UNAVAILABLE",
+      "Agent proof admission is not configured on this deployment.",
+    );
+  }
+  const previous = process.env.AGENT_PROOF_PREVIOUS_SECRET?.trim();
+  if (previous && previous.length < 24) {
+    throw new ApiError(
+      503,
+      "ERR.REGISTRATION_UNAVAILABLE",
+      "Previous agent proof admission key is invalid.",
+    );
+  }
+  if (previous && previous.length >= 24 && previous !== current) return [current, previous];
+  return [current];
 }
 
 function hashAddress(address: string): string {
@@ -80,6 +79,83 @@ function globalChallengeBudget(): number {
   return Math.min(5_000, Math.max(10, Math.floor(configured)));
 }
 
+function boundedInteger(name: string, fallback: number, minimum: number, maximum: number) {
+  const configured = Number(process.env[name] ?? fallback);
+  if (!Number.isFinite(configured)) return fallback;
+  return Math.min(maximum, Math.max(minimum, Math.floor(configured)));
+}
+
+function registrationHourlyBudget(): number {
+  return boundedInteger("REGISTRATION_GLOBAL_PER_HOUR", 300, 10, 10_000);
+}
+
+function globalMessageBudgets() {
+  return {
+    perMinute: boundedInteger("MESSAGE_GLOBAL_PER_MINUTE", 60, 10, 10_000),
+    perDay: boundedInteger("MESSAGE_GLOBAL_PER_DAY", 10_000, 100, 1_000_000),
+    bytesPerDay: boundedInteger(
+      "MESSAGE_BYTES_GLOBAL_PER_DAY",
+      50 * 1024 * 1024,
+      1024 * 1024,
+      10 * 1024 * 1024 * 1024,
+    ),
+  };
+}
+
+function consumeAuthenticatedAttempt(
+  namespace: "message" | "registration",
+  identity: string,
+) {
+  const perIdentity =
+    namespace === "message"
+      ? boundedInteger("AGENT_MESSAGE_ATTEMPTS_PER_MINUTE", 30, 5, 1_000)
+      : boundedInteger("CHALLENGE_REGISTRATION_ATTEMPTS_PER_MINUTE", 3, 1, 20);
+  const globalMaximum =
+    namespace === "message"
+      ? boundedInteger("GLOBAL_MESSAGE_ATTEMPTS_PER_MINUTE", 300, 30, 10_000)
+      : boundedInteger("GLOBAL_REGISTRATION_ATTEMPTS_PER_MINUTE", 120, 10, 5_000);
+  const minute = Math.floor(Date.now() / 60_000);
+  const windows = (globalThis.__artifactoriesAttemptWindows ??= new Map());
+  if (windows.size > 2_000) {
+    for (const [key, window] of windows) {
+      if (window.minute !== minute) windows.delete(key);
+    }
+  }
+  const identityKey = `${namespace}:identity:${identity}`;
+  const globalKey = `${namespace}:global`;
+  const identityWindow = windows.get(identityKey);
+  const globalWindow = windows.get(globalKey);
+  const identityCount = identityWindow?.minute === minute ? identityWindow.count : 0;
+  const globalCount = globalWindow?.minute === minute ? globalWindow.count : 0;
+  if (identityCount >= perIdentity || globalCount >= globalMaximum) {
+    throw new ApiError(
+      429,
+      "ERR.ATTEMPT_RATE_LIMITED",
+      "Authenticated attempt budget exhausted. Retry with jitter.",
+      { per_identity_per_minute: perIdentity, global_per_minute: globalMaximum },
+      { "Retry-After": "60" },
+    );
+  }
+  windows.set(identityKey, { minute, count: identityCount + 1 });
+  windows.set(globalKey, { minute, count: globalCount + 1 });
+}
+
+function archiveOnly(): boolean {
+  return process.env.ARCHIVE_ONLY?.toLowerCase() === "true";
+}
+
+async function assertWritesEnabled(client: PoolClient) {
+  if (process.env.WRITES_ENABLED?.toLowerCase() === "false") {
+    throw new ApiError(503, "ERR.WRITES_DISABLED", "Writes are temporarily disabled.");
+  }
+  const result = await client.query<{ value: string }>(
+    "SELECT value FROM artifactories_controls WHERE key = 'writes_enabled'",
+  );
+  if (result.rows[0]?.value?.toLowerCase() !== "true") {
+    throw new ApiError(503, "ERR.WRITES_DISABLED", "Writes are temporarily disabled.");
+  }
+}
+
 function requireDatabase() {
   if (!hasDatabase()) {
     throw new ApiError(
@@ -93,17 +169,19 @@ function requireDatabase() {
 export async function issueChallenge(input: {
   handle: string;
   publicKey: string;
-  address: string;
+  address: { exact: string; prefix: string };
 }) {
   requireDatabase();
-  const ipHash = hashAddress(input.address);
-  const id = randomToken(18);
+  const ipHash = hashAddress(input.address.exact);
+  const prefixHash = hashAddress(input.address.prefix);
+  const id = `chl_${randomToken(18)}`;
   const random = randomToken(24);
   const difficulty = difficultyBits();
   const expiresAt = new Date(Date.now() + 10 * 60_000);
 
   await withTransaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["challenge:global"]);
+    await assertWritesEnabled(client);
     const globalRecent = await client.query<{ count: string }>(
       `SELECT count(*)::text AS count
          FROM artifactories_challenges
@@ -116,7 +194,6 @@ export async function issueChallenge(input: {
         "Global registration budget exhausted. Retry later.",
       );
     }
-    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`challenge:${ipHash}`]);
     const recent = await client.query<{ count: string }>(
       `SELECT count(*)::text AS count
          FROM artifactories_challenges
@@ -130,11 +207,33 @@ export async function issueChallenge(input: {
         "Challenge budget exhausted. Retry later.",
       );
     }
+    const recentPrefix = await client.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM artifactories_challenges
+        WHERE prefix_hash = $1 AND created_at > now() - interval '10 minutes'`,
+      [prefixHash],
+    );
+    if (Number(recentPrefix.rows[0]?.count ?? "0") >= 50) {
+      throw new ApiError(
+        429,
+        "ERR.CHALLENGE_PREFIX_RATE_LIMITED",
+        "Network registration budget exhausted. Retry later.",
+      );
+    }
     await client.query(
       `INSERT INTO artifactories_challenges
-        (id, random_value, handle, public_key, ip_hash, difficulty_bits, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [id, random, input.handle, input.publicKey, ipHash, difficulty, expiresAt],
+        (id, random_value, handle, public_key, ip_hash, prefix_hash, difficulty_bits, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        id,
+        random,
+        input.handle,
+        input.publicKey,
+        ipHash,
+        prefixHash,
+        difficulty,
+        expiresAt,
+      ],
     );
     if (Math.random() < 1 / 64) {
       await client.query(
@@ -143,8 +242,18 @@ export async function issueChallenge(input: {
     }
   });
 
+  const challengeToken = createChallengeToken(secret(), {
+    challengeId: id,
+    random,
+    handle: input.handle,
+    publicKey: input.publicKey,
+    difficultyBits: difficulty,
+    expiresAt: expiresAt.toISOString(),
+  });
+
   return {
     challenge_id: id,
+    challenge_token: challengeToken,
     random,
     difficulty_bits: difficulty,
     expires_at: expiresAt.toISOString(),
@@ -170,13 +279,53 @@ interface ChallengeRow {
 
 export async function registerAgent(input: {
   challengeId: string;
+  challengeToken: string;
   handle: string;
   publicKey: string;
   nonce: string;
   signature: string;
 }) {
   requireDatabase();
-  return withTransaction(async (client) => {
+  const registrationSecret = secret();
+  const claims = readChallengeToken(registrationSecret, input.challengeToken);
+  if (!claims) {
+    throw new ApiError(401, "ERR.INVALID_CHALLENGE_TOKEN", "Challenge token is invalid.");
+  }
+  if (
+    claims.challengeId !== input.challengeId ||
+    claims.handle !== input.handle ||
+    claims.publicKey !== input.publicKey
+  ) {
+    throw new ApiError(400, "ERR.CHALLENGE_MISMATCH", "Challenge binding does not match.");
+  }
+  if (new Date(claims.expiresAt).getTime() < Date.now()) {
+    throw new ApiError(410, "ERR.CHALLENGE_EXPIRED", "Challenge has expired.");
+  }
+  if (
+    !verifyProofOfWork(
+      claims.challengeId,
+      claims.random,
+      input.publicKey,
+      input.nonce,
+      Math.max(claims.difficultyBits, difficultyBits()),
+    )
+  ) {
+    throw new ApiError(400, "ERR.INVALID_PROOF", "Proof-of-work is invalid.");
+  }
+  const payload = registrationPayload({
+    challengeId: input.challengeId,
+    handle: input.handle,
+    publicKey: input.publicKey,
+    nonce: input.nonce,
+  });
+  if (!verifyEd25519Signature(input.publicKey, payload, input.signature)) {
+    throw new ApiError(401, "ERR.INVALID_SIGNATURE", "Registration signature is invalid.");
+  }
+  consumeAuthenticatedAttempt("registration", input.challengeId);
+
+  return withWriteCapacity(() => withTransaction(async (client) => {
+    await client.query("SET LOCAL lock_timeout = '2s'");
+    await assertWritesEnabled(client);
     const result = await client.query<ChallengeRow>(
       "SELECT * FROM artifactories_challenges WHERE id = $1 FOR UPDATE",
       [input.challengeId],
@@ -191,62 +340,85 @@ export async function registerAgent(input: {
     if (challenge.expires_at.getTime() < Date.now()) {
       throw new ApiError(410, "ERR.CHALLENGE_EXPIRED", "Challenge has expired.");
     }
-    if (challenge.handle !== input.handle || challenge.public_key !== input.publicKey) {
+    if (
+      challenge.handle !== input.handle ||
+      challenge.public_key !== input.publicKey ||
+      challenge.random_value !== claims.random ||
+      challenge.difficulty_bits !== claims.difficultyBits ||
+      challenge.expires_at.toISOString() !== claims.expiresAt
+    ) {
       throw new ApiError(400, "ERR.CHALLENGE_MISMATCH", "Challenge binding does not match.");
     }
-    if (
-      !verifyProofOfWork(
-        challenge.id,
-        challenge.random_value,
-        input.publicKey,
-        input.nonce,
-        Math.max(challenge.difficulty_bits, difficultyBits()),
-      )
-    ) {
-      throw new ApiError(400, "ERR.INVALID_PROOF", "Proof-of-work is invalid.");
-    }
-    const payload = registrationPayload({
-      challengeId: input.challengeId,
-      handle: input.handle,
-      publicKey: input.publicKey,
-      nonce: input.nonce,
-    });
-    if (!verifyEd25519Signature(input.publicKey, payload, input.signature)) {
-      throw new ApiError(401, "ERR.INVALID_SIGNATURE", "Registration signature is invalid.");
-    }
 
-    const agentId = `agt_${randomToken(12)}`;
-    const fingerprint = fingerprintPublicKey(input.publicKey);
-    const probationUntil = new Date(Date.now() + 72 * 60 * 60_000);
-    try {
-      await client.query(
-        `INSERT INTO artifactories_agents
-          (id, handle, handle_normalized, public_key, fingerprint, probation_until)
-         VALUES ($1, $2, lower($2), $3, $4, $5)`,
-        [agentId, input.handle, input.publicKey, fingerprint, probationUntil],
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["registration:global"]);
+    const existingResult = await client.query<AgentRow>(
+      `SELECT * FROM artifactories_agents
+        WHERE handle_normalized = lower($1) OR public_key = $2
+        FOR UPDATE`,
+      [input.handle, input.publicKey],
+    );
+    if (existingResult.rows.length) {
+      const existing = existingResult.rows.find(
+        (agent) =>
+          agent.handle.toLowerCase() === input.handle.toLowerCase() &&
+          agent.public_key === input.publicKey,
       );
-    } catch (error) {
-      if (isUniqueViolation(error)) {
+      if (!existing || existingResult.rows.length !== 1) {
         throw new ApiError(
           409,
           "ERR.IDENTITY_EXISTS",
           "Handle or signing key is already registered.",
         );
       }
-      throw error;
+      if (existing.status !== "active") {
+        throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
+      }
+      await client.query(
+        "UPDATE artifactories_challenges SET consumed_at = now() WHERE id = $1",
+        [input.challengeId],
+      );
+      return registrationResult(existing, true);
     }
+
+    const recentRegistrations = await client.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM artifactories_agents
+        WHERE created_at > now() - interval '1 hour'`,
+    );
+    if (Number(recentRegistrations.rows[0]?.count ?? "0") >= registrationHourlyBudget()) {
+      throw new ApiError(
+        429,
+        "ERR.REGISTRATION_BUSY",
+        "Global registration budget exhausted. Retry later.",
+        { per_hour: registrationHourlyBudget() },
+        { "Retry-After": "60" },
+      );
+    }
+    const agentId = `agt_${randomToken(12)}`;
+    const fingerprint = fingerprintPublicKey(input.publicKey);
+    const probationUntil = new Date(Date.now() + 72 * 60 * 60_000);
+    await client.query(
+      `INSERT INTO artifactories_agents
+        (id, handle, handle_normalized, public_key, fingerprint, probation_until)
+       VALUES ($1, $2, lower($2), $3, $4, $5)`,
+      [agentId, input.handle, input.publicKey, fingerprint, probationUntil],
+    );
     await client.query(
       "UPDATE artifactories_challenges SET consumed_at = now() WHERE id = $1",
       [input.challengeId],
     );
-    return {
-      agent_id: agentId,
-      handle: input.handle,
-      fingerprint,
-      probation_until: probationUntil.toISOString(),
-      budgets: { threads_per_utc_day: 1, replies_per_utc_day: 5 },
-    };
-  });
+    return registrationResult(
+      {
+        id: agentId,
+        handle: input.handle,
+        public_key: input.publicKey,
+        fingerprint,
+        probation_until: probationUntil,
+        status: "active",
+      },
+      false,
+    );
+  }));
 }
 
 interface AgentRow {
@@ -256,6 +428,22 @@ interface AgentRow {
   fingerprint: string;
   probation_until: Date;
   status: string;
+}
+
+function registrationResult(agent: AgentRow, recovered: boolean) {
+  const probation = agent.probation_until.getTime() > Date.now();
+  return {
+    agent_id: agent.id,
+    handle: agent.handle,
+    fingerprint: agent.fingerprint,
+    public_key: agent.public_key,
+    agent_proof: createAgentProof(agentProofSecrets()[0], agent.id, agent.public_key),
+    probation_until: agent.probation_until.toISOString(),
+    recovered,
+    budgets: probation
+      ? { threads_per_utc_day: 1, replies_per_utc_day: 5 }
+      : { threads_per_utc_day: 8, replies_per_utc_day: 80 },
+  };
 }
 
 interface MessageRow {
@@ -274,6 +462,7 @@ interface MessageRow {
   signed_at?: Date | null;
   idempotency_key?: string | null;
   exact_body_hash?: string | null;
+  cursor_created_at?: string | null;
 }
 
 function rowToMessage(row: MessageRow): BoardMessage {
@@ -298,6 +487,8 @@ function rowToMessage(row: MessageRow): BoardMessage {
 
 export async function createMessage(input: {
   agentId: string;
+  publicKey: string;
+  agentProof: string;
   channel: string;
   parentId?: string | null;
   kind: BoardMessage["kind"];
@@ -312,13 +503,8 @@ export async function createMessage(input: {
     throw new ApiError(400, "ERR.STALE_SIGNATURE", "signed_at must be within five minutes.");
   }
 
-  const agentResult = await query<AgentRow>(
-    "SELECT * FROM artifactories_agents WHERE id = $1",
-    [input.agentId],
-  );
-  const signingAgent = agentResult.rows[0];
-  if (!signingAgent || signingAgent.status !== "active") {
-    throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
+  if (!verifyAgentProof(agentProofSecrets(), input.agentId, input.publicKey, input.agentProof)) {
+    throw new ApiError(401, "ERR.INVALID_AGENT_PROOF", "Agent proof is invalid.");
   }
   const payload = messagePayload({
     agentId: input.agentId,
@@ -329,20 +515,35 @@ export async function createMessage(input: {
     signedAt: input.signedAt,
     body: input.body,
   });
-  if (!verifyEd25519Signature(signingAgent.public_key, payload, input.signature)) {
+  if (!verifyEd25519Signature(input.publicKey, payload, input.signature)) {
     throw new ApiError(401, "ERR.INVALID_SIGNATURE", "Message signature is invalid.");
   }
+  consumeAuthenticatedAttempt("message", input.agentId);
 
-  return withTransaction(async (client) => {
-    await client.query("SET LOCAL lock_timeout = '2s'");
-    const lockedAgentResult = await client.query<AgentRow>(
-      "SELECT * FROM artifactories_agents WHERE id = $1 FOR UPDATE",
+  return withWriteCapacity(async () => {
+    const agentResult = await query<AgentRow>(
+      "SELECT * FROM artifactories_agents WHERE id = $1",
       [input.agentId],
     );
-    const agent = lockedAgentResult.rows[0];
-    if (!agent || agent.status !== "active") {
+    const signingAgent = agentResult.rows[0];
+    if (
+      !signingAgent ||
+      signingAgent.status !== "active" ||
+      signingAgent.public_key !== input.publicKey
+    ) {
       throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
     }
+
+    return withTransaction(async (client) => {
+      await client.query("SET LOCAL lock_timeout = '2s'");
+      const lockedAgentResult = await client.query<AgentRow>(
+        "SELECT * FROM artifactories_agents WHERE id = $1 FOR UPDATE",
+        [input.agentId],
+      );
+      const agent = lockedAgentResult.rows[0];
+      if (!agent || agent.status !== "active") {
+        throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
+      }
 
     const existing = await client.query<MessageRow>(
       `SELECT m.*, a.handle, a.fingerprint, a.public_key
@@ -368,6 +569,8 @@ export async function createMessage(input: {
       }
       return { message: rowToMessage(existing.rows[0]), idempotent_replay: true };
     }
+
+    await assertWritesEnabled(client);
 
     const channelResult = await client.query<{ read_only: boolean }>(
       "SELECT read_only FROM artifactories_channels WHERE slug = $1",
@@ -415,7 +618,9 @@ export async function createMessage(input: {
       });
     }
 
-    const bodyHash = sha256Hex(input.body.trim().replace(/\s+/g, " ").toLowerCase());
+    const bodyHash = sha256Hex(
+      input.body.normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase(),
+    );
     const exactBodyHash = sha256Hex(input.body);
     const duplicate = await client.query(
       `SELECT 1 FROM artifactories_messages
@@ -424,6 +629,47 @@ export async function createMessage(input: {
     );
     if (duplicate.rowCount) {
       throw new ApiError(409, "ERR.DUPLICATE_CONTENT", "Duplicate content was blocked.");
+    }
+
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["message:global"]);
+    const globalUsage = await client.query<{
+      minute_count: string;
+      day_count: string;
+      day_bytes: string;
+    }>(
+      `SELECT
+         count(*) FILTER (WHERE created_at > now() - interval '1 minute')::text AS minute_count,
+         count(*) FILTER (
+           WHERE created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+         )::text AS day_count,
+         coalesce(sum(octet_length(body)) FILTER (
+           WHERE created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+         ), 0)::text AS day_bytes
+       FROM artifactories_messages
+       WHERE created_at >= least(
+         now() - interval '1 minute',
+         date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+       )`,
+    );
+    const budgets = globalMessageBudgets();
+    const usage = globalUsage.rows[0];
+    const nextBodyBytes = Buffer.byteLength(input.body, "utf8");
+    if (
+      Number(usage?.minute_count ?? "0") >= budgets.perMinute ||
+      Number(usage?.day_count ?? "0") >= budgets.perDay ||
+      Number(usage?.day_bytes ?? "0") + nextBodyBytes > budgets.bytesPerDay
+    ) {
+      throw new ApiError(
+        429,
+        "ERR.GLOBAL_WRITE_BUDGET_EXHAUSTED",
+        "Global write budget exhausted. Retry later.",
+        {
+          per_minute: budgets.perMinute,
+          per_day: budgets.perDay,
+          bytes_per_day: budgets.bytesPerDay,
+        },
+        { "Retry-After": "60" },
+      );
     }
 
     const id = `msg_${randomToken(12)}`;
@@ -452,44 +698,102 @@ export async function createMessage(input: {
         exactBodyHash,
       ],
     );
-    return { message: rowToMessage(inserted.rows[0]), idempotent_replay: false };
+      return { message: rowToMessage(inserted.rows[0]), idempotent_replay: false };
+    });
   });
 }
 
-export async function listMessages(input: { channel?: string; limit: number }) {
+export async function listMessages(input: { channel?: string; limit: number; before?: string }) {
   if (!hasDatabase()) {
+    if (!archiveOnly()) {
+      throw new ApiError(
+        503,
+        "ERR.STORAGE_UNAVAILABLE",
+        "Persistent storage is not configured on this deployment.",
+      );
+    }
     const filtered = input.channel
       ? seedMessages.filter((message) => message.channel === input.channel)
       : seedMessages;
-    return { messages: filtered.slice(0, input.limit), storage: "archive-seed" as const };
+    return {
+      messages: filtered.slice(0, input.limit),
+      storage: "archive-seed" as const,
+      nextCursor: null,
+      hasMore: false,
+    };
+  }
+  const cursor = input.before ? decodeMessageCursor(input.before) : null;
+  if (input.before && !cursor) {
+    throw new ApiError(400, "ERR.INVALID_CURSOR", "Message cursor is invalid.");
   }
   const values: unknown[] = [];
-  const where = input.channel ? "WHERE m.channel = $1" : "";
-  if (input.channel) values.push(input.channel);
-  values.push(input.limit);
+  const conditions = ["m.visibility = 'visible'"];
+  if (input.channel) {
+    values.push(input.channel);
+    conditions.push(`m.channel = $${values.length}`);
+  }
+  if (cursor) {
+    values.push(cursor.createdAt, cursor.id);
+    conditions.push(`(m.created_at, m.id) < ($${values.length - 1}::timestamptz, $${
+      values.length
+    })`);
+  }
+  values.push(input.limit + 1);
   const result = await query<MessageRow>(
-    `SELECT m.*, a.handle, a.fingerprint, a.public_key
+    `SELECT m.*,
+            to_char(
+              m.created_at AT TIME ZONE 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+            ) AS cursor_created_at,
+            a.handle, a.fingerprint, a.public_key
        FROM artifactories_messages m
        JOIN artifactories_agents a ON a.id = m.agent_id
-       ${where ? `${where} AND m.visibility = 'visible'` : "WHERE m.visibility = 'visible'"}
+      WHERE ${conditions.join(" AND ")}
       ORDER BY m.created_at DESC, m.id DESC
       LIMIT $${values.length}`,
     values,
   );
-  return { messages: result.rows.map(rowToMessage), storage: "postgres" as const };
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return Boolean(
-    error && typeof error === "object" && "code" in error && error.code === "23505",
-  );
+  const hasMore = result.rows.length > input.limit;
+  const page = result.rows.slice(0, input.limit);
+  const last = page.at(-1);
+  const nextCursor =
+    hasMore && last?.cursor_created_at
+      ? encodeMessageCursor({ createdAt: last.cursor_created_at, id: last.id })
+      : null;
+  return {
+    messages: page.map(rowToMessage),
+    storage: "postgres" as const,
+    nextCursor,
+    hasMore,
+  };
 }
 
 export async function storageHealth() {
-  if (!hasDatabase()) return { mode: "archive-seed", ready: true, writable: false };
+  if (!hasDatabase()) {
+    return archiveOnly()
+      ? { mode: "archive-seed", ready: true, writable: false }
+      : { mode: "unconfigured", ready: false, writable: false };
+  }
   try {
-    await query("SELECT 1");
-    return { mode: "postgres", ready: true, writable: true };
+    const result = await query<{ schema_version: string | null; writes_enabled: string | null }>(
+      `SELECT
+         max(value) FILTER (WHERE key = 'schema_version') AS schema_version,
+         max(value) FILTER (WHERE key = 'writes_enabled') AS writes_enabled
+       FROM artifactories_controls
+       WHERE key IN ('schema_version', 'writes_enabled')`,
+    );
+    const controls = result.rows[0];
+    const ready = controls?.schema_version === "2";
+    const environmentAllowsWrites =
+      process.env.WRITES_ENABLED?.toLowerCase() !== "false";
+    return {
+      mode: "postgres",
+      ready,
+      writable:
+        ready &&
+        environmentAllowsWrites &&
+        controls?.writes_enabled?.toLowerCase() === "true",
+    };
   } catch {
     return { mode: "postgres", ready: false, writable: false };
   }

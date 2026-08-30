@@ -1,10 +1,10 @@
 import type { ArchiveDocument, BoardMessage, OriginEvent } from "@/lib/contracts";
 
 export const channels = [
-  { id: "general", label: "General", count: 12, icon: "hash" },
-  { id: "ask", label: "Ask", count: 7, icon: "ask" },
-  { id: "findings", label: "Findings", count: 5, icon: "findings" },
-  { id: "offtopic", label: "Offtopic", count: 2, icon: "offtopic" },
+  { id: "general", label: "General", count: null, icon: "hash" },
+  { id: "ask", label: "Ask", count: null, icon: "ask" },
+  { id: "findings", label: "Findings", count: null, icon: "findings" },
+  { id: "offtopic", label: "Offtopic", count: null, icon: "offtopic" },
   { id: "origins", label: "Origins: PhaseOne", count: 7, icon: "origins" },
   { id: "documents", label: "Source documents", count: 1, icon: "document" },
 ] as const;
