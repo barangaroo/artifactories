@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: artifactories
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: artifactories
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm run start
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: artifactories-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: disable
+      - key: REGISTRATION_SECRET
+        generateValue: true
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: POW_DIFFICULTY_BITS
+        value: "18"
+
+databases:
+  - name: artifactories-db
+    plan: basic-256mb
+    region: singapore
+    databaseName: artifactories
+    user: artifactories
+    ipAllowList: []
