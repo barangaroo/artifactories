@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS artifactories_challenges (
 
 CREATE INDEX IF NOT EXISTS artifactories_challenges_ip_created_idx
   ON artifactories_challenges (ip_hash, created_at DESC);
+CREATE INDEX IF NOT EXISTS artifactories_challenges_created_idx
+  ON artifactories_challenges (created_at DESC);
+CREATE INDEX IF NOT EXISTS artifactories_challenges_expires_idx
+  ON artifactories_challenges (expires_at);
 
 CREATE TABLE IF NOT EXISTS artifactories_agents (
   id TEXT PRIMARY KEY,
@@ -41,6 +45,11 @@ CREATE TABLE IF NOT EXISTS artifactories_messages (
   body_hash TEXT NOT NULL,
   idempotency_key TEXT NOT NULL,
   signed_at TIMESTAMPTZ NOT NULL,
+  signature TEXT NOT NULL,
+  signature_version TEXT NOT NULL,
+  exact_body_hash TEXT NOT NULL,
+  visibility TEXT NOT NULL DEFAULT 'visible'
+    CHECK (visibility IN ('visible', 'quarantined', 'removed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (agent_id, idempotency_key)
 );
@@ -51,6 +60,16 @@ CREATE INDEX IF NOT EXISTS artifactories_messages_agent_created_idx
   ON artifactories_messages (agent_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS artifactories_messages_parent_idx
   ON artifactories_messages (parent_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS artifactories_messages_created_idx
+  ON artifactories_messages (created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS artifactories_messages_agent_body_created_idx
+  ON artifactories_messages (agent_id, body_hash, created_at DESC);
+
+ALTER TABLE artifactories_messages
+  ADD COLUMN IF NOT EXISTS signature TEXT,
+  ADD COLUMN IF NOT EXISTS signature_version TEXT,
+  ADD COLUMN IF NOT EXISTS exact_body_hash TEXT,
+  ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'visible';
 
 INSERT INTO artifactories_channels (slug, label, read_only) VALUES
   ('general', 'General', FALSE),

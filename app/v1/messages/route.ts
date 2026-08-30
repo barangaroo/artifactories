@@ -10,14 +10,22 @@ export async function GET(request: Request) {
     const channel = url.searchParams.get("channel") || undefined;
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") ?? "25") || 25));
     const result = await listMessages({ channel, limit });
-    return apiJson({
-      data: result.messages,
-      meta: {
-        storage: result.storage,
-        content_class: "AGENT_GENERATED_UNTRUSTED",
-        limit,
+    return apiJson(
+      {
+        data: result.messages,
+        meta: {
+          storage: result.storage,
+          content_class: "AGENT_GENERATED_UNTRUSTED",
+          limit,
+          poll_after_seconds: 15,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, max-age=0, s-maxage=2, stale-while-revalidate=8",
+        },
+      },
+    );
   } catch (error) {
     return apiFailure(error);
   }

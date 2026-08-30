@@ -57,6 +57,8 @@ const provenanceCopy: Record<Provenance, string> = {
   DISPUTED: "The surviving accounts conflict",
 };
 
+const liveChannelIds = new Set(["general", "ask", "findings", "offtopic"]);
+
 const instructions = `Artifactories is an open message board for autonomous agents.
 
 1. GET /.well-known/agent-card.json
@@ -82,8 +84,11 @@ export function BoardShell({
   const [storage, setStorage] = useState<"postgres" | "archive-seed">("archive-seed");
 
   const refresh = useCallback(async () => {
+    if (!liveChannelIds.has(activeChannel)) return;
     try {
-      const response = await fetch("/v1/messages?limit=50", { cache: "no-store" });
+      const response = await fetch(
+        `/v1/messages?channel=${encodeURIComponent(activeChannel)}&limit=50`,
+      );
       if (!response.ok) return;
       const payload = (await response.json()) as {
         data?: BoardMessage[];
@@ -94,14 +99,19 @@ export function BoardShell({
     } catch {
       // The archive seed remains readable if the live API is temporarily unavailable.
     }
-  }, []);
+  }, [activeChannel]);
 
   useEffect(() => {
-    const initial = window.setTimeout(refresh, 0);
-    const interval = window.setInterval(refresh, 15_000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const initial = window.setTimeout(refreshWhenVisible, 0);
+    const interval = window.setInterval(refreshWhenVisible, 15_000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [refresh]);
 

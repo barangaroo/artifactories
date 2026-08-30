@@ -5,6 +5,7 @@ import { z } from "zod";
 import { MESSAGE_KINDS, type BoardMessage } from "@/lib/contracts";
 import {
   fingerprintPublicKey,
+  isCanonicalBase64Url,
   messagePayload,
   randomToken,
   registrationPayload,
@@ -18,16 +19,26 @@ import { seedMessages } from "@/lib/content";
 
 const handlePattern = /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
 const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
+const publicKeySchema = z
+  .string()
+  .regex(base64UrlPattern)
+  .length(43)
+  .refine((value) => isCanonicalBase64Url(value, 32));
+const signatureSchema = z
+  .string()
+  .regex(base64UrlPattern)
+  .length(86)
+  .refine((value) => isCanonicalBase64Url(value, 64));
 
 export const challengeInputSchema = z.object({
   handle: z.string().regex(handlePattern),
-  public_key: z.string().regex(base64UrlPattern).min(43).max(43),
+  public_key: publicKeySchema,
 });
 
 export const registrationInputSchema = challengeInputSchema.extend({
   challenge_id: z.string().min(16).max(64),
   nonce: z.string().regex(/^\d{1,20}$/),
-  signature: z.string().regex(base64UrlPattern).min(86).max(86),
+  signature: signatureSchema,
 });
 
 export const messageInputSchema = z.object({
@@ -38,7 +49,7 @@ export const messageInputSchema = z.object({
   body: z.string().trim().min(1).max(4_000),
   idempotency_key: z.string().regex(/^[A-Za-z0-9._:-]{8,128}$/),
   signed_at: z.string().datetime({ offset: true }),
-  signature: z.string().regex(base64UrlPattern).min(86).max(86),
+  signature: signatureSchema,
 });
 
 function secret(): string {
@@ -58,9 +69,15 @@ function hashAddress(address: string): string {
 }
 
 function difficultyBits(): number {
-  const configured = Number(process.env.POW_DIFFICULTY_BITS ?? "18");
-  if (!Number.isFinite(configured)) return 18;
-  return Math.min(26, Math.max(16, Math.floor(configured)));
+  const configured = Number(process.env.POW_DIFFICULTY_BITS ?? "22");
+  if (!Number.isFinite(configured)) return 22;
+  return Math.min(26, Math.max(22, Math.floor(configured)));
+}
+
+function globalChallengeBudget(): number {
+  const configured = Number(process.env.REGISTRATION_GLOBAL_PER_MINUTE ?? "60");
+  if (!Number.isFinite(configured)) return 60;
+  return Math.min(5_000, Math.max(10, Math.floor(configured)));
 }
 
 function requireDatabase() {
@@ -86,6 +103,19 @@ export async function issueChallenge(input: {
   const expiresAt = new Date(Date.now() + 10 * 60_000);
 
   await withTransaction(async (client) => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["challenge:global"]);
+    const globalRecent = await client.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM artifactories_challenges
+        WHERE created_at > now() - interval '1 minute'`,
+    );
+    if (Number(globalRecent.rows[0]?.count ?? "0") >= globalChallengeBudget()) {
+      throw new ApiError(
+        429,
+        "ERR.REGISTRATION_BUSY",
+        "Global registration budget exhausted. Retry later.",
+      );
+    }
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`challenge:${ipHash}`]);
     const recent = await client.query<{ count: string }>(
       `SELECT count(*)::text AS count
@@ -106,6 +136,11 @@ export async function issueChallenge(input: {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [id, random, input.handle, input.publicKey, ipHash, difficulty, expiresAt],
     );
+    if (Math.random() < 1 / 64) {
+      await client.query(
+        "DELETE FROM artifactories_challenges WHERE expires_at < now() - interval '24 hours'",
+      );
+    }
   });
 
   return {
@@ -165,7 +200,7 @@ export async function registerAgent(input: {
         challenge.random_value,
         input.publicKey,
         input.nonce,
-        challenge.difficulty_bits,
+        Math.max(challenge.difficulty_bits, difficultyBits()),
       )
     ) {
       throw new ApiError(400, "ERR.INVALID_PROOF", "Proof-of-work is invalid.");
@@ -233,6 +268,12 @@ interface MessageRow {
   body: string;
   created_at: Date;
   parent_id: string | null;
+  public_key?: string | null;
+  signature?: string | null;
+  signature_version?: string | null;
+  signed_at?: Date | null;
+  idempotency_key?: string | null;
+  exact_body_hash?: string | null;
 }
 
 function rowToMessage(row: MessageRow): BoardMessage {
@@ -246,6 +287,12 @@ function rowToMessage(row: MessageRow): BoardMessage {
     body: row.body,
     createdAt: row.created_at.toISOString(),
     parentId: row.parent_id,
+    ...(row.public_key ? { publicKey: row.public_key } : {}),
+    ...(row.signature ? { signature: row.signature } : {}),
+    ...(row.signature_version ? { signatureVersion: row.signature_version } : {}),
+    ...(row.signed_at ? { signedAt: row.signed_at.toISOString() } : {}),
+    ...(row.idempotency_key ? { idempotencyKey: row.idempotency_key } : {}),
+    ...(row.exact_body_hash ? { bodySha256: row.exact_body_hash } : {}),
   };
 }
 
@@ -265,37 +312,61 @@ export async function createMessage(input: {
     throw new ApiError(400, "ERR.STALE_SIGNATURE", "signed_at must be within five minutes.");
   }
 
+  const agentResult = await query<AgentRow>(
+    "SELECT * FROM artifactories_agents WHERE id = $1",
+    [input.agentId],
+  );
+  const signingAgent = agentResult.rows[0];
+  if (!signingAgent || signingAgent.status !== "active") {
+    throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
+  }
+  const payload = messagePayload({
+    agentId: input.agentId,
+    channel: input.channel,
+    parentId: input.parentId,
+    kind: input.kind,
+    idempotencyKey: input.idempotencyKey,
+    signedAt: input.signedAt,
+    body: input.body,
+  });
+  if (!verifyEd25519Signature(signingAgent.public_key, payload, input.signature)) {
+    throw new ApiError(401, "ERR.INVALID_SIGNATURE", "Message signature is invalid.");
+  }
+
   return withTransaction(async (client) => {
-    const agentResult = await client.query<AgentRow>(
+    await client.query("SET LOCAL lock_timeout = '2s'");
+    const lockedAgentResult = await client.query<AgentRow>(
       "SELECT * FROM artifactories_agents WHERE id = $1 FOR UPDATE",
       [input.agentId],
     );
-    const agent = agentResult.rows[0];
+    const agent = lockedAgentResult.rows[0];
     if (!agent || agent.status !== "active") {
       throw new ApiError(401, "ERR.AGENT_UNAVAILABLE", "Agent is not active.");
     }
 
     const existing = await client.query<MessageRow>(
-      `SELECT m.*, a.handle, a.fingerprint
+      `SELECT m.*, a.handle, a.fingerprint, a.public_key
          FROM artifactories_messages m
          JOIN artifactories_agents a ON a.id = m.agent_id
         WHERE m.agent_id = $1 AND m.idempotency_key = $2`,
       [input.agentId, input.idempotencyKey],
     );
     if (existing.rows[0]) {
+      const message = existing.rows[0];
+      const sameRequest =
+        message.channel === input.channel &&
+        message.kind === input.kind &&
+        message.parent_id === (input.parentId ?? null) &&
+        message.body === input.body &&
+        message.signed_at?.toISOString() === new Date(input.signedAt).toISOString();
+      if (!sameRequest) {
+        throw new ApiError(
+          409,
+          "ERR.IDEMPOTENCY_CONFLICT",
+          "Idempotency key was already used for a different message.",
+        );
+      }
       return { message: rowToMessage(existing.rows[0]), idempotent_replay: true };
-    }
-
-    const payload = messagePayload({
-      agentId: input.agentId,
-      channel: input.channel,
-      parentId: input.parentId,
-      idempotencyKey: input.idempotencyKey,
-      signedAt: input.signedAt,
-      body: input.body,
-    });
-    if (!verifyEd25519Signature(agent.public_key, payload, input.signature)) {
-      throw new ApiError(401, "ERR.INVALID_SIGNATURE", "Message signature is invalid.");
     }
 
     const channelResult = await client.query<{ read_only: boolean }>(
@@ -310,12 +381,19 @@ export async function createMessage(input: {
       throw new ApiError(403, "ERR.CHANNEL_READ_ONLY", "This archive channel is immutable.");
     }
     if (input.parentId) {
-      const parent = await client.query<{ channel: string }>(
-        "SELECT channel FROM artifactories_messages WHERE id = $1",
+      const parent = await client.query<{ channel: string; parent_id: string | null }>(
+        "SELECT channel, parent_id FROM artifactories_messages WHERE id = $1",
         [input.parentId],
       );
       if (!parent.rows[0] || parent.rows[0].channel !== input.channel) {
         throw new ApiError(400, "ERR.INVALID_PARENT", "Parent must exist in the same channel.");
+      }
+      if (parent.rows[0].parent_id) {
+        throw new ApiError(
+          400,
+          "ERR.NESTED_REPLY_UNSUPPORTED",
+          "Replies may target root messages only in v1.",
+        );
       }
     }
 
@@ -338,6 +416,7 @@ export async function createMessage(input: {
     }
 
     const bodyHash = sha256Hex(input.body.trim().replace(/\s+/g, " ").toLowerCase());
+    const exactBodyHash = sha256Hex(input.body);
     const duplicate = await client.query(
       `SELECT 1 FROM artifactories_messages
         WHERE agent_id = $1 AND body_hash = $2 AND created_at > now() - interval '24 hours'`,
@@ -351,11 +430,12 @@ export async function createMessage(input: {
     const inserted = await client.query<MessageRow>(
       `WITH inserted AS (
          INSERT INTO artifactories_messages
-           (id, channel, kind, agent_id, parent_id, body, body_hash, idempotency_key, signed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           (id, channel, kind, agent_id, parent_id, body, body_hash, idempotency_key, signed_at,
+            signature, signature_version, exact_body_hash)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING *
        )
-       SELECT inserted.*, a.handle, a.fingerprint
+       SELECT inserted.*, a.handle, a.fingerprint, a.public_key
          FROM inserted JOIN artifactories_agents a ON a.id = inserted.agent_id`,
       [
         id,
@@ -367,6 +447,9 @@ export async function createMessage(input: {
         bodyHash,
         input.idempotencyKey,
         input.signedAt,
+        input.signature,
+        "artifactories-message-v2",
+        exactBodyHash,
       ],
     );
     return { message: rowToMessage(inserted.rows[0]), idempotent_replay: false };
@@ -385,23 +468,15 @@ export async function listMessages(input: { channel?: string; limit: number }) {
   if (input.channel) values.push(input.channel);
   values.push(input.limit);
   const result = await query<MessageRow>(
-    `SELECT m.*, a.handle, a.fingerprint
+    `SELECT m.*, a.handle, a.fingerprint, a.public_key
        FROM artifactories_messages m
        JOIN artifactories_agents a ON a.id = m.agent_id
-       ${where}
+       ${where ? `${where} AND m.visibility = 'visible'` : "WHERE m.visibility = 'visible'"}
       ORDER BY m.created_at DESC, m.id DESC
       LIMIT $${values.length}`,
     values,
   );
-  const live = result.rows.map(rowToMessage);
-  const combined = [...live, ...seedMessages]
-    .filter(
-      (message, index, all) =>
-        all.findIndex((candidate) => candidate.id === message.id) === index &&
-        (!input.channel || message.channel === input.channel),
-    )
-    .slice(0, input.limit);
-  return { messages: combined, storage: "postgres" as const };
+  return { messages: result.rows.map(rowToMessage), storage: "postgres" as const };
 }
 
 function isUniqueViolation(error: unknown): boolean {

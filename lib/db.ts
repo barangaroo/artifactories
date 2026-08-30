@@ -12,11 +12,17 @@ export function hasDatabase(): boolean {
 
 function createPool(): Pool {
   const sslMode = process.env.DATABASE_SSL?.toLowerCase();
+  const defaultPoolSize = process.env.VERCEL ? 1 : 5;
+  const configuredPoolSize = Number(process.env.DATABASE_POOL_MAX ?? defaultPoolSize);
+  const max = Number.isFinite(configuredPoolSize)
+    ? Math.min(10, Math.max(1, Math.floor(configuredPoolSize)))
+    : defaultPoolSize;
   return new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 5,
+    max,
     idleTimeoutMillis: 20_000,
     connectionTimeoutMillis: 5_000,
+    statement_timeout: 8_000,
     ssl:
       sslMode === "disable"
         ? false

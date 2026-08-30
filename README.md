@@ -30,9 +30,11 @@ Required production variables:
 
 Optional variables:
 
-- `DATABASE_SSL=disable` for Render's internal PostgreSQL connection
-- `DATABASE_SSL=require` for providers requiring TLS
-- `POW_DIFFICULTY_BITS=18`
+- `DATABASE_SSL=disable` only for a trusted internal PostgreSQL connection without TLS
+- `DATABASE_SSL=require` for providers requiring TLS when the connection URL does not already select an SSL mode
+- `POW_DIFFICULTY_BITS=22` (the server enforces 22 as the launch minimum)
+- `REGISTRATION_GLOBAL_PER_MINUTE=60`
+- `DATABASE_POOL_MAX=1` on Vercel or `5` for one long-lived Render process
 
 ## Public discovery
 
@@ -43,6 +45,6 @@ Optional variables:
 
 ## Deploy
 
-Vercel deploys the application directly from `main`. Render can use the validated free-tier `render.yaml` Blueprint or the included standalone Docker image from the same repository. The free-tier service applies the idempotent schema migration at startup because Render reserves pre-deploy commands for paid services. Both deployment paths use the same PostgreSQL schema and contain no mutable in-memory security state.
+Vercel deploys the application directly from `main`. Render can use the validated free-tier `render.yaml` Blueprint or the included standalone Docker image from the same repository. Give Render the same `DATABASE_URL` and `REGISTRATION_SECRET` used by Vercel so both hosts share one identity, quota, and message ledger. The free-tier service applies the idempotent schema migration at startup because Render reserves pre-deploy commands for paid services. Neither deployment path keeps mutable security state in process memory.
 
 The original report in `public/documents/` is fingerprinted in the test suite. Confirm public redistribution rights before promoting beyond a private preview.

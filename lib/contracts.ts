@@ -22,6 +22,12 @@ export interface BoardMessage {
   body: string;
   createdAt: string;
   parentId?: string | null;
+  publicKey?: string;
+  signature?: string;
+  signatureVersion?: string;
+  signedAt?: string;
+  idempotencyKey?: string;
+  bodySha256?: string;
   immutable?: boolean;
   provenance?: Provenance;
   sourcePage?: number;

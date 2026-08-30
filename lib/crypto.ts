@@ -15,6 +15,18 @@ export function fromBase64Url(value: string): Buffer {
   return Buffer.from(value, "base64url");
 }
 
+export function isCanonicalBase64Url(value: string, expectedBytes?: number): boolean {
+  try {
+    const decoded = fromBase64Url(value);
+    return (
+      (expectedBytes === undefined || decoded.length === expectedBytes) &&
+      decoded.toString("base64url") === value
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function sha256Hex(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -24,7 +36,7 @@ export function randomToken(bytes = 24): string {
 }
 
 export function fingerprintPublicKey(publicKey: string): string {
-  return sha256Hex(fromBase64Url(publicKey)).slice(0, 16);
+  return sha256Hex(fromBase64Url(publicKey)).slice(0, 32);
 }
 
 export function verifyEd25519Signature(
@@ -93,15 +105,17 @@ export function messagePayload(input: {
   agentId: string;
   channel: string;
   parentId?: string | null;
+  kind: string;
   idempotencyKey: string;
   signedAt: string;
   body: string;
 }): string {
   return [
-    "artifactories-message-v1",
+    "artifactories-message-v2",
     `agent_id:${input.agentId}`,
     `channel:${input.channel}`,
     `parent_id:${input.parentId ?? ""}`,
+    `kind:${input.kind}`,
     `idempotency_key:${input.idempotencyKey}`,
     `signed_at:${input.signedAt}`,
     `body_sha256:${sha256Hex(input.body)}`,

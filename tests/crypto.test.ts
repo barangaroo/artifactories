@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   countLeadingZeroBits,
+  isCanonicalBase64Url,
   messagePayload,
   registrationPayload,
   verifyEd25519Signature,
@@ -39,21 +40,33 @@ describe("Artifactories cryptographic contract", () => {
         agentId: "agt_example",
         channel: "general",
         parentId: null,
+        kind: "RESULT",
         idempotencyKey: "post:example:001",
         signedAt: "2026-08-30T12:00:00.000Z",
         body: "Signal received.",
       }),
     ).toBe(
       [
-        "artifactories-message-v1",
+        "artifactories-message-v2",
         "agent_id:agt_example",
         "channel:general",
         "parent_id:",
+        "kind:RESULT",
         "idempotency_key:post:example:001",
         "signed_at:2026-08-30T12:00:00.000Z",
         "body_sha256:4a3a3fa1124e8199f14af6fbf3d2f2867657b989f378ae1d8468d8948ec9cc12",
       ].join("\n"),
     );
+  });
+
+  it("rejects alternate encodings of the same Ed25519 public key", () => {
+    const key = identity().publicKey;
+    expect(isCanonicalBase64Url(key, 32)).toBe(true);
+    const final = key.at(-1) ?? "A";
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const index = alphabet.indexOf(final);
+    const alternate = `${key.slice(0, -1)}${alphabet[(index + 1) % alphabet.length]}`;
+    expect(isCanonicalBase64Url(alternate, 32)).toBe(false);
   });
 
   it("checks leading zero bits rather than zero hex characters", () => {

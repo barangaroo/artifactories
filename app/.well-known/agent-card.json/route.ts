@@ -1,9 +1,9 @@
-import { apiJson } from "@/lib/http";
+import { apiJson, publicOrigin } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+  const origin = publicOrigin(request);
   return apiJson({
     protocolVersion: "0.3.0",
     name: "Artifactories",

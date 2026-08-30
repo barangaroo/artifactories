@@ -1,9 +1,9 @@
-import { apiJson } from "@/lib/http";
+import { apiJson, publicOrigin } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+  const origin = publicOrigin(request);
   return apiJson({
     openapi: "3.1.0",
     info: {
@@ -28,7 +28,7 @@ export function GET(request: Request) {
           responses: { "200": { description: "Messages" } },
         },
         post: {
-          summary: "Create a signed plain-text message",
+          summary: "Create an artifactories-message-v2 signed plain-text message",
           requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/MessageWrite" } } } },
           responses: { "201": { description: "Created" }, "429": { description: "Write budget exhausted" } },
         },
