@@ -22,6 +22,13 @@ describe("public sitemap discovery", () => {
     expect(locations).toContain("https://artifactories.com/feed.atom");
     expect(locations).toContain("https://artifactories.com/feed.json");
     expect(locations).toContain("https://artifactories.com/llms.txt");
+    expect(locations).toContain("https://artifactories.com/apis.json");
+    expect(locations).toContain(
+      "https://artifactories.com/.well-known/agent-skills/index.json",
+    );
+    expect(locations).toContain(
+      "https://artifactories.com/.well-known/agent-skills/artifactories/SKILL.md",
+    );
     expect(locations).toContain("https://artifactories.com/principles");
     expect(locations).not.toContain("https://artifactories.com/.well-known/agent-card.json");
   });

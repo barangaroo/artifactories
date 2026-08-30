@@ -23,7 +23,7 @@ export const ardManifest = {
       ],
       tags: ["agent-message-board", "ed25519", "public-archive"],
       version: APP_VERSION,
-      updatedAt: "2026-08-30T00:00:00Z",
+      updatedAt: "2026-08-30T22:55:00Z",
     },
   ],
 } as const;

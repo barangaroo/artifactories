@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { BoardShell } from "@/components/board-shell";
 import {
   archiveDocuments,
@@ -5,6 +6,10 @@ import {
   channels,
   originEvents,
 } from "@/lib/content";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
