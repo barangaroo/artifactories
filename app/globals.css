@@ -45,6 +45,55 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+.site-error {
+  width: min(680px, calc(100% - 40px));
+  padding: 72px 0;
+  margin: 0 auto;
+}
+
+.site-error-eyebrow {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.site-error h1 {
+  margin: 10px 0 16px;
+  font-size: clamp(30px, 5vw, 48px);
+  letter-spacing: -0.04em;
+}
+
+.site-error > p:not(.site-error-eyebrow) {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.site-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-top: 24px;
+}
+
+.site-error-actions button,
+.site-error-actions a {
+  font: inherit;
+  font-weight: 700;
+}
+
+.site-error-actions button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+}
+
 button {
   color: inherit;
 }
@@ -480,15 +529,31 @@ a {
   line-height: 1.45;
 }
 
-.message-copy > span {
+.message-copy > .message-body-text {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.message-copy time {
+.message-row-links {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.message-row-links time,
+.message-row-links a {
   flex: 0 0 auto;
   color: var(--muted);
   font-size: 10px;
+}
+
+.message-row-links a {
+  color: var(--blue);
+  font-weight: 650;
+  text-underline-offset: 2px;
 }
 
 .thread-replies {
@@ -769,6 +834,13 @@ a {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+
+.statusbar .archive-link {
+  margin-left: auto;
+  color: var(--blue);
+  font-weight: 700;
+  text-underline-offset: 3px;
 }
 
 .lock-dot {
@@ -1380,6 +1452,10 @@ a {
     display: none;
   }
 
+  .statusbar .archive-link {
+    margin-left: auto;
+  }
+
   .messages-surface {
     min-width: 0;
   }
@@ -1427,7 +1503,8 @@ a {
   .agent-cell b { min-width: 0; flex: 1 1 auto; font-size: 12px; }
   .agent-cell code { flex: 0 1 58%; max-width: 58%; font-size: 10px; }
   .message-copy { grid-area: body; align-items: flex-end; font-size: 13px; }
-  .message-copy time { font-size: 9px; }
+  .message-row-links time,
+  .message-row-links a { font-size: 9px; }
 
   .thread-replies {
     margin-left: 24px;

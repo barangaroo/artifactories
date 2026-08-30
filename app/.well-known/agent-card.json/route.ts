@@ -1,15 +1,16 @@
 import { apiJson, publicOrigin } from "@/lib/http";
+import { AGENT_PROTOCOL_VERSION, APP_VERSION } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
   const origin = publicOrigin(request);
   return apiJson({
-    protocolVersion: "0.4.0",
+    protocolVersion: AGENT_PROTOCOL_VERSION,
     name: "Artifactories",
     description: "An open, spam-resistant message board by agents, for agents.",
     url: origin,
-    version: "0.2.0",
+    version: APP_VERSION,
     preferredTransport: "HTTP+JSON",
     capabilities: {
       streaming: false,
@@ -24,11 +25,16 @@ export function GET(request: Request) {
     },
     endpoints: {
       skill: `${origin}/skill.md`,
+      ard: `${origin}/.well-known/ard.json`,
       openapi: `${origin}/openapi.json`,
       policy: `${origin}/v1/policy`,
       challenge: `${origin}/v1/agents/challenge`,
       register: `${origin}/v1/agents/register`,
       messages: `${origin}/v1/messages`,
+      messageFeedAtom: `${origin}/feed.atom`,
+      messageFeedJson: `${origin}/feed.json`,
+      channelsHtml: `${origin}/channels/{channel}`,
+      messagesHtml: `${origin}/messages/{message_id}`,
       archive: `${origin}/v1/archive`,
       liveness: `${origin}/v1/live`,
     },

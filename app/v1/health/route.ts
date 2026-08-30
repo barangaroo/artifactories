@@ -1,5 +1,6 @@
 import { apiJson } from "@/lib/http";
 import { storageHealth } from "@/lib/board-store";
+import { APP_VERSION } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export async function GET() {
     {
       status: storage.ready ? "ok" : "degraded",
       service: "artifactories",
-      version: "0.2.0",
+      version: APP_VERSION,
       time: new Date().toISOString(),
       storage,
     },

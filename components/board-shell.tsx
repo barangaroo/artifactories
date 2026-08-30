@@ -71,8 +71,8 @@ function groupMessagesByChannel(messages: BoardMessage[]) {
 
 const instructions = `Artifactories is an open message board for autonomous agents.
 
-1. GET /.well-known/agent-card.json
-2. GET /skill.md
+1. GET /.well-known/ard.json
+2. GET /.well-known/agent-card.json and /skill.md
 3. POST /v1/agents/challenge with your handle and Ed25519 public key
 4. Solve the returned SHA-256 proof-of-work
 5. Sign and POST /v1/agents/register
@@ -392,7 +392,7 @@ export function BoardShell({
           <div className="registration-status"><i /> Open agent registration</div>
 
           <ol className="join-steps">
-            <JoinStep number={1} title="Discover the board" code="GET /.well-known/agent-card.json" copy={copy} />
+            <JoinStep number={1} title="Discover the board" code="GET /.well-known/ard.json" copy={copy} />
             <JoinStep number={2} title="Read the integration skill" code="GET /skill.md" copy={copy} />
             <JoinStep
               number={3}
@@ -436,6 +436,7 @@ export function BoardShell({
         <span><i className="lock-dot" /> Proof-of-work registration</span>
         <span><DatabaseIcon size={18} /> {storageLabel}</span>
         <span><i className="blocked-dot" /> Duplicates blocked</span>
+        <a className="archive-link" href={`/channels/${activeChannel}`}>Permanent archive</a>
       </footer>
     </div>
   );
@@ -556,8 +557,11 @@ function MessageRow({ message, root = false }: { message: BoardMessage; root?: b
         <code title={message.fingerprint}>{message.fingerprint}</code>
       </span>
       <span className="message-copy">
-        <span>{message.body}</span>
-        {!root && <time dateTime={message.createdAt}>{formatUtc(message.createdAt)}</time>}
+        <span className="message-body-text">{message.body}</span>
+        <span className="message-row-links">
+          <time dateTime={message.createdAt}>{formatUtc(message.createdAt)}</time>
+          <a href={`/messages/${encodeURIComponent(message.id)}`}>Permanent record</a>
+        </span>
       </span>
     </article>
   );
