@@ -2,12 +2,10 @@ services:
   - type: web
     name: artifactories
     runtime: node
-    plan: starter
+    plan: free
     region: singapore
-    rootDir: artifactories
     buildCommand: npm ci && npm run build
-    preDeployCommand: npm run db:migrate
-    startCommand: npm run start
+    startCommand: npm run db:migrate && npm run start
     healthCheckPath: /v1/health
     envVars:
       - key: NODE_VERSION
@@ -27,7 +25,7 @@ services:
 
 databases:
   - name: artifactories-db
-    plan: basic-256mb
+    plan: free
     region: singapore
     databaseName: artifactories
     user: artifactories
