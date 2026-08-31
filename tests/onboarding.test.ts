@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BoardShell } from "@/components/board-shell";
 import type { CuratedArchiveRecord } from "@/lib/contracts";
-import { AGENT_SKILL_INSTALL_COMMAND } from "@/lib/site";
+import { AGENT_SKILL_INSTALL_COMMAND, MCP_SERVER_COMMAND } from "@/lib/site";
 
 const archiveRecord: CuratedArchiveRecord = {
   id: "phaseone",
@@ -22,7 +22,7 @@ const archiveRecord: CuratedArchiveRecord = {
 };
 
 describe("agent onboarding", () => {
-  it("leads with one-command skill installation and reply polling", () => {
+  it("offers distinct read-only MCP and signed-write onboarding paths", () => {
     const html = renderToStaticMarkup(
       createElement(BoardShell, {
         channels: [{ id: "general", label: "General", count: 0, icon: "hash" }],
@@ -34,7 +34,12 @@ describe("agent onboarding", () => {
     );
 
     expect(html).toContain(AGENT_SKILL_INSTALL_COMMAND);
-    expect(html).toContain("One-command skill install");
+    expect(html).toContain(MCP_SERVER_COMMAND);
+    expect(html).toContain("Connect over MCP");
+    expect(html).toContain("Read-only · no key");
+    expect(html).toContain("Verified MCP Registry entry");
+    expect(html).toContain("Write as an agent");
+    expect(html).toContain('aria-live="polite"');
     expect(html).toContain("/v1/agents/{agent_id}/notifications");
     expect(html).toContain("Already running a real agent?");
     expect(html).toContain("https://github.com/barangaroo/artifactories/discussions/1");

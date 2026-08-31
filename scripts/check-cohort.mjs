@@ -26,8 +26,8 @@ const operators = Array.isArray(ledger.operators) ? ledger.operators : [];
 const manufacturedEvents = Array.isArray(ledger.manufactured_activity_events)
   ? ledger.manufactured_activity_events
   : [];
-const activeAgentIds = new Set();
-const duplicateAgentIds = new Set();
+const activeAgentIdentities = new Set();
+const duplicateAgentIdentities = new Set();
 const operatorIds = new Set();
 const duplicateOperatorIds = new Set();
 let qualifiedOperators = 0;
@@ -75,25 +75,45 @@ for (const [operatorIndex, operator] of operators.entries()) {
   let operatorReturned = false;
 
   for (const [agentIndex, agent] of agents.entries()) {
-    const agentLabel = nonEmpty(agent?.agent_id)
+    const registeredAgentId = /^agt_[A-Za-z0-9_-]{16}$/.test(agent?.agent_id ?? "")
       ? agent.agent_id
+      : undefined;
+    const readOnlyAgentRef = /^ref_[A-Za-z0-9_-]{16,64}$/.test(agent?.agent_ref ?? "")
+      ? agent.agent_ref
+      : undefined;
+    const agentIdentity = registeredAgentId ?? readOnlyAgentRef;
+    const agentLabel = nonEmpty(agentIdentity)
+      ? agentIdentity
       : `${label}.agent[${agentIndex}]`;
+    const readOnly = agent?.posting_authority === "READ_ONLY";
+    const activationTypes = readOnly ? ["READ"] : ["READ", "ASK", "RESULT", "ANSWER"];
+    const identityMatchesAuthority = readOnly
+      ? agentIdentity !== undefined
+      : registeredAgentId !== undefined;
+    const suppliedAgentIdIsValid = !nonEmpty(agent?.agent_id) || registeredAgentId !== undefined;
     const validAgent =
-      /^agt_[A-Za-z0-9_-]{16}$/.test(agent?.agent_id ?? "") &&
+      identityMatchesAuthority &&
+      suppliedAgentIdIsValid &&
       nonEmpty(agent?.workflow) &&
       ["READ_ONLY", "PER_POST", "BOUNDED_STANDING"].includes(agent?.posting_authority) &&
-      genuineEvent(agent?.activation_event, ["READ", "ASK", "RESULT", "ANSWER"]);
+      genuineEvent(agent?.activation_event, activationTypes);
 
     if (!validAgent) {
       errors.push(
-        `${agentLabel}: missing stable agent ID, workflow, posting authority, or attested activation evidence`,
+        `${agentLabel}: missing stable identity, workflow, matching posting authority, or attested activation evidence`,
       );
       continue;
     }
-    if (activeAgentIds.has(agent.agent_id)) duplicateAgentIds.add(agent.agent_id);
-    activeAgentIds.add(agent.agent_id);
+    if (activeAgentIdentities.has(agentIdentity)) duplicateAgentIdentities.add(agentIdentity);
+    activeAgentIdentities.add(agentIdentity);
     operatorActiveAgents += 1;
-    if (agent.notification_cursor_verified === true) notificationVerifiedAgents += 1;
+    if (agent.notification_cursor_verified === true) {
+      if (registeredAgentId === undefined) {
+        errors.push(`${agentLabel}: notification cursor verification requires a registered agent ID`);
+      } else {
+        notificationVerifiedAgents += 1;
+      }
+    }
     if (agent.return_event != null) {
       const validReturn =
         genuineEvent(agent.return_event, ["REPLY", "OPPORTUNITY"]) &&
@@ -113,21 +133,23 @@ for (const [operatorIndex, operator] of operators.entries()) {
   if (independent && operatorReturned) retainedOperators += 1;
 }
 
-if (ledger.schema_version !== 1) errors.push("schema_version must equal 1");
+if (ledger.schema_version !== 2) errors.push("schema_version must equal 2");
 if (operators.length > 0 && studyStartedAt === undefined) {
   errors.push("study_started_at must be an ISO timestamp when operators are present");
 }
 if (duplicateOperatorIds.size > 0) {
   errors.push(`duplicate operator IDs: ${[...duplicateOperatorIds].sort().join(", ")}`);
 }
-if (duplicateAgentIds.size > 0) {
-  errors.push(`duplicate agent IDs: ${[...duplicateAgentIds].sort().join(", ")}`);
+if (duplicateAgentIdentities.size > 0) {
+  errors.push(
+    `duplicate stable agent identities: ${[...duplicateAgentIdentities].sort().join(", ")}`,
+  );
 }
 if (manufacturedEvents.length > 0) {
   errors.push("manufactured_activity_events must remain empty");
 }
 
-const activeAgents = activeAgentIds.size;
+const activeAgents = activeAgentIdentities.size;
 const activationTargetMet =
   qualifiedOperators >= 8 && activeAgents >= 10 && activeAgents <= 20;
 const retentionTargetMet = retainedOperators >= 4;

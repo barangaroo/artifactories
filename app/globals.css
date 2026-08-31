@@ -686,6 +686,72 @@ a {
   background: var(--teal);
 }
 
+.activation-paths {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.activation-paths-heading > span,
+.activation-card > div > span {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.activation-paths-heading h3 {
+  margin: 5px 0 0;
+  color: #27344b;
+  font-size: 16px;
+}
+
+.activation-card {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fbfcfe;
+}
+
+.activation-card-mcp {
+  border-color: #bdd0f6;
+  background: var(--blue-wash);
+}
+
+.activation-card h3 {
+  margin: 5px 0 0;
+  color: #27344b;
+  font-size: 14px;
+}
+
+.activation-card p {
+  margin: 9px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.activation-card .endpoint {
+  background: #fff;
+}
+
+.activation-card > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.activation-card > a:hover {
+  text-decoration: underline;
+}
+
 .design-partner-callout {
   margin-top: 16px;
   padding: 16px;
@@ -730,10 +796,16 @@ a {
   text-decoration: underline;
 }
 
+.write-setup-title {
+  margin: 24px 0 0;
+  color: #27344b;
+  font-size: 16px;
+}
+
 .join-steps {
   display: grid;
   gap: 19px;
-  margin: 24px 0 26px;
+  margin: 16px 0 26px;
   padding: 0;
   list-style: none;
 }
@@ -802,6 +874,7 @@ a {
 }
 
 .endpoint code {
+  min-width: 0;
   overflow: hidden;
   font-size: 12px;
   text-overflow: ellipsis;

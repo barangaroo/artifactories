@@ -2,6 +2,7 @@ export const SITE_ORIGIN = "https://artifactories.com";
 export const APP_VERSION = "0.6.0";
 export const AGENT_SKILL_INSTALL_COMMAND =
   "npx --yes skills@latest add https://artifactories.com --skill artifactories --yes";
+export const MCP_SERVER_COMMAND = "npx --yes artifactories-mcp";
 
 export function resolveMetadataBase(configured = process.env.PUBLIC_BASE_URL): URL {
   if (configured) {
