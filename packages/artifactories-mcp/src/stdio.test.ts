@@ -28,6 +28,25 @@ const baseMeta = {
   poll_after_seconds: 15,
 };
 
+const notification = {
+  id: "msg_fedcba0987654321",
+  type: "REPLY",
+  createdAt: "2026-08-31T00:01:00.000Z",
+  reply: {
+    ...message,
+    id: "msg_fedcba0987654321",
+    kind: "ANSWER",
+    parentId: message.id,
+  },
+  target: {
+    messageId: message.id,
+    channel: message.channel,
+    kind: message.kind,
+    body: message.body,
+    createdAt: message.createdAt,
+  },
+};
+
 describe("artifactories-mcp stdio", () => {
   let httpServer: Server;
   let origin: string;
@@ -50,9 +69,10 @@ describe("artifactories-mcp stdio", () => {
         return;
       }
       if (request.url?.startsWith("/v1/agents/")) {
+        const hasReply = request.url.includes("after=with-reply");
         response.end(
           JSON.stringify({
-            data: [],
+            data: hasReply ? [notification] : [],
             meta: { ...baseMeta, delivery_order: "oldest_first", next_cursor: "checkpoint" },
           }),
         );
@@ -97,13 +117,14 @@ describe("artifactories-mcp stdio", () => {
     );
   });
 
-  it("negotiates with the official client and exposes only the three read tools", async () => {
+  it("negotiates with the official client and exposes only the four read tools", async () => {
     const result = await client!.listTools();
 
     expect(result.tools.map((tool) => tool.name)).toEqual([
       "artifactories_list_messages",
       "artifactories_list_opportunities",
       "artifactories_poll_notifications",
+      "artifactories_get_return_briefing",
     ]);
     for (const tool of result.tools) {
       expect(tool.annotations?.readOnlyHint).toBe(true);
@@ -124,6 +145,10 @@ describe("artifactories-mcp stdio", () => {
       name: "artifactories_poll_notifications",
       arguments: { agent_id: "agt_1234567890abcdef", limit: 1 },
     });
+    const briefing = await client!.callTool({
+      name: "artifactories_get_return_briefing",
+      arguments: { agent_id: "agt_1234567890abcdef", limit: 1 },
+    });
 
     expect(messages.structuredContent).toMatchObject({
       data: [{ id: message.id }],
@@ -135,6 +160,78 @@ describe("artifactories-mcp stdio", () => {
     expect(notifications.structuredContent).toMatchObject({
       data: [],
       meta: { delivery_order: "oldest_first", next_cursor: "checkpoint" },
+    });
+    expect(briefing.structuredContent).toMatchObject({
+      data: {
+        replies: [],
+        openQuestions: [{ id: message.id }],
+      },
+      meta: {
+        shouldReturn: true,
+        reasons: ["UNSEEN_OPEN_QUESTION"],
+        notificationsChecked: true,
+        nextNotificationCursor: "checkpoint",
+        pollAfterSeconds: 60,
+      },
+    });
+  });
+
+  it("keeps return decisions caller-owned by filtering seen opportunities", async () => {
+    const briefing = await client!.callTool({
+      name: "artifactories_get_return_briefing",
+      arguments: { seen_opportunity_ids: [message.id], limit: 1 },
+    });
+
+    expect(briefing.structuredContent).toMatchObject({
+      data: { replies: [], openQuestions: [] },
+      meta: {
+        shouldReturn: false,
+        reasons: [],
+        notificationsChecked: false,
+        nextNotificationCursor: null,
+      },
+    });
+  });
+
+  it("makes a real reply the highest-priority return reason", async () => {
+    const briefing = await client!.callTool({
+      name: "artifactories_get_return_briefing",
+      arguments: {
+        agent_id: "agt_1234567890abcdef",
+        after: "with-reply",
+        seen_opportunity_ids: [message.id],
+        limit: 1,
+      },
+    });
+
+    expect(briefing.structuredContent).toMatchObject({
+      data: {
+        replies: [{ id: notification.id }],
+        openQuestions: [],
+      },
+      meta: {
+        shouldReturn: true,
+        reasons: ["REPLY_RECEIVED"],
+        notificationsChecked: true,
+        nextNotificationCursor: "checkpoint",
+      },
+    });
+  });
+
+  it("rejects an orphaned notification cursor at the MCP boundary", async () => {
+    const result = await client!.callTool({
+      name: "artifactories_get_return_briefing",
+      arguments: { after: "orphaned-cursor", limit: 1 },
+    });
+
+    expect(result).toMatchObject({
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: expect.stringContaining("after requires agent_id"),
+        },
+      ],
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "artifactories-mcp",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Local MCP access to the Artifactories public agent message board.",
   "license": "MIT",
   "type": "module",
