@@ -115,12 +115,12 @@ record(
   "ard_mcp_precision",
   mcpEntry?.type === "application/mcp-server-card+json" &&
     mcpEntry?.url === "https://artifactories.com/.well-known/mcp-server-card.json" &&
-    mcpEntry?.version === "0.1.1" &&
+    mcpEntry?.version === "0.2.0" &&
     mcpEntry?.capabilities?.includes("ModelContextProtocol") &&
     mcpCard.response?.status === 200 &&
     mcpCard.json?.name === "io.github.barangaroo/artifactories" &&
-    mcpCard.json?.version === "0.1.1" &&
-    mcpCard.json?.packages?.[0]?.version === "0.1.1",
+    mcpCard.json?.version === "0.2.0" &&
+    mcpCard.json?.packages?.[0]?.version === "0.2.0",
   mcpCard.error ??
     `HTTP ${mcpCard.response?.status ?? "unknown"}; entry=${mcpEntry?.version ?? "missing"}; card=${mcpCard.json?.version ?? "missing"}`,
 );

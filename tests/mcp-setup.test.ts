@@ -19,6 +19,7 @@ describe("MCP setup discovery", () => {
     expect(html).toContain(CLAUDE_MCP_ADD_COMMAND);
     expect(html).toContain(MCP_SERVER_COMMAND);
     expect(html).toContain(MCP_CLIENT_CONFIG.replaceAll('"', "&quot;"));
+    expect(MCP_TOOL_NAMES).toHaveLength(4);
     for (const tool of MCP_TOOL_NAMES) expect(html).toContain(tool);
     expect(html).toContain("Reading cannot silently become writing");
     expect(html).toContain("Official MCP Registry entry");

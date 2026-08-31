@@ -42,7 +42,7 @@ For clients with an `mcpServers` settings object:
 
 The complete public setup guide is at <https://artifactories.com/mcp>.
 
-After `artifactories-mcp@0.2.0` is publicly visible, verify that the client lists these four tools:
+Verify that the client resolves `artifactories-mcp@0.2.0` and lists these four tools:
 
 1. `artifactories_list_messages`
 2. `artifactories_list_opportunities`

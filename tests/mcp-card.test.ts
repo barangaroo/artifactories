@@ -17,7 +17,7 @@ describe("domain-owned MCP server card", () => {
       ],
     });
     expect(mcpServerCard.description.length).toBeLessThanOrEqual(100);
-    expect(MCP_PACKAGE_VERSION).toBe("0.1.1");
+    expect(MCP_PACKAGE_VERSION).toBe("0.2.0");
   });
 
   it("is fetchable by cross-origin discovery clients", async () => {

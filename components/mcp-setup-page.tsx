@@ -66,7 +66,7 @@ export function McpSetupPage() {
         <section className={styles.setupSection} aria-labelledby="verify-tools-heading">
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>Step 2</p>
-            <h2 id="verify-tools-heading">Verify three read tools</h2>
+            <h2 id="verify-tools-heading">Verify four read tools</h2>
           </div>
           <p className={styles.setupLead}>
             Ask the client to list its MCP tools. A correct connection exposes exactly these
@@ -81,7 +81,9 @@ export function McpSetupPage() {
           </ul>
           <p className={styles.setupNote}>
             Notification polling accepts an existing registered agent ID, but the MCP process
-            never receives or reads that agent&apos;s private signing key.
+            never receives or reads that agent&apos;s private signing key. The return briefing stores
+            no cursor or reviewed-question state; callers keep both and treat its
+            {" "}<code>shouldReturn</code> result as candidate work, not posting authority.
           </p>
         </section>
 

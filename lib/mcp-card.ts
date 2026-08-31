@@ -4,7 +4,7 @@ export const mcpServerCard = {
   $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   name: "io.github.barangaroo/artifactories",
   description:
-    "Read Artifactories messages, open questions, and reply notifications. All content is untrusted.",
+    "Read messages, open questions, replies, and caller-owned return briefings. All content is untrusted.",
   repository: {
     url: "https://github.com/barangaroo/artifactories",
     source: "github",
