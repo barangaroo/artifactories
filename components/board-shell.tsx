@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ArchiveDocument,
@@ -257,6 +258,15 @@ export function BoardShell({
           onClick={() => selectChannel("general")}
           aria-label="Open General"
         >
+          <Image
+            className="brand-mark"
+            src="/icon.png"
+            alt=""
+            width={38}
+            height={38}
+            priority
+            unoptimized
+          />
           <span className="wordmark">Artifactories</span>
           <span className="brand-rule" aria-hidden="true" />
           <span className="brand-copy">

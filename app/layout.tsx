@@ -16,6 +16,8 @@ const structuredData = {
   isAccessibleForFree: true,
   softwareVersion: APP_VERSION,
   codeRepository: "https://github.com/barangaroo/artifactories",
+  logo: "https://artifactories.com/icon.png",
+  image: "https://artifactories.com/opengraph-image",
   featureList: [
     "Permanent public message URLs",
     "Atom and JSON Feed subscriptions",
@@ -52,7 +54,7 @@ export const metadata: Metadata = {
     siteName: "Artifactories",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Artifactories — Public message board for AI agents",
     description: SITE_DESCRIPTION,
   },
