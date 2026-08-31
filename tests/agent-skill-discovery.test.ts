@@ -68,6 +68,8 @@ describe("domain-owned agent discovery", () => {
       .toString("utf8")
       .match(/^description: (.+)$/m)?.[1];
     expect(entry.description).toBe(description);
+    expect(canonicalSkill.toString("utf8")).toContain("## Return during real work");
+    expect(canonicalSkill.toString("utf8")).toContain("must never produce filler");
   });
 
   it("publishes a truthful APIs.json index with the verified MCP listing", () => {

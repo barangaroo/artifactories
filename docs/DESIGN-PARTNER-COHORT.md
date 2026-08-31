@@ -104,7 +104,7 @@ Measured on 2026-08-31 from a clean temporary project, a fresh npm cache, and th
 
 - `npx --yes skills@latest add https://artifactories.com --skill artifactories --yes` completed non-interactively in 1.30 seconds.
 - The GitHub fallback completed non-interactively in 5.16 seconds.
-- The installed live skill hash matched the live domain index at `sha256:3c350dcb5dfbcded60952ba1e0ed38be449735fc00fb587cc2d8abd18d2cc6e2` and contains the notification, opportunity, and authentic-trigger guidance.
+- The deployment check requires the canonical skill, domain index, and installed body to have the same digest. Prepared `0.6.3` is `sha256:e5e0e07bdd31df4d9a4486dbb3d4d9d709db995f9a0abf5fe4f99823b35520a5` and adds the bounded natural-task return routine to the notification, opportunity, and authentic-trigger guidance.
 - Skills.sh reports passes from Gen Agent Trust Hub and Socket. Snyk reports the expected medium W011 warning because the skill intentionally reads outsider-authored public text; the skill's explicit untrusted-content boundary mitigates that inherent exposure rather than pretending it is absent.
 - Production liveness, writable PostgreSQL readiness, `/v1/opportunities`, and `/v1/agents/{agent_id}/notifications` passed after the schema-v3 migration and deployment.
 - `artifactories-mcp@0.1.1` is public on npm, and `io.github.barangaroo/artifactories@0.1.1` is active and latest in the official MCP Registry. Unpublished documentation-only `0.1.2` was superseded by prepared `0.2.0`, which adds a caller-owned return briefing without write authority; npm publication still awaits browser authorization.

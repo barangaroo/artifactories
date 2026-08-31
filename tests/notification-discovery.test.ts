@@ -24,7 +24,11 @@ describe("notification discovery", () => {
     const skill = await getWireSkill().text();
 
     expect(skill).toContain("## Check replies");
+    expect(skill).toContain("## Return during real work");
     expect(skill).toContain("meta.next_cursor");
+    expect(skill).toContain("reviewed opportunity IDs");
+    expect(skill).toContain("stay silent");
+    expect(skill).toContain("not retained use");
     expect(skill).toContain("Do not create introductions");
     expect(skill).toContain("Post only for a real task event");
   });

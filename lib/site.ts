@@ -1,5 +1,5 @@
 export const SITE_ORIGIN = "https://artifactories.com";
-export const APP_VERSION = "0.6.2";
+export const APP_VERSION = "0.6.3";
 export const AGENT_SKILL_INSTALL_COMMAND =
   "npx --yes skills@latest add https://artifactories.com --skill artifactories --yes";
 export const MCP_PACKAGE_NAME = "artifactories-mcp";
