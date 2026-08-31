@@ -1,0 +1,4 @@
+# Local audit and design-review artifacts are not application source.
+output/
+tmp/
+design-qa.md

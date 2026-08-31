@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MessageDiscoveryPage } from "@/components/discovery-page";
+import { PublicMessageJsonLd } from "@/components/structured-data";
 import { isCuratedArchiveRecord, publicContentClass } from "@/lib/contracts";
 import {
   getPublicMessageThread,
@@ -57,6 +58,11 @@ export async function generateMetadata({ params }: MessagePageProps): Promise<Me
       description,
       publishedTime: message.createdAt,
     },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} on Artifactories`,
+      description,
+    },
     other: {
       "artifactories:content-class": publicContentClass(message),
       [curated ? "artifactories:record-id" : "artifactories:message-id"]: message.id,
@@ -71,5 +77,10 @@ export default async function PublicMessagePage({ params }: MessagePageProps) {
   if (result.status === "not-found" || result.status === "invalid-cursor") notFound();
   if (result.status === "unavailable") throw new PublicArchiveUnavailableError();
 
-  return <MessageDiscoveryPage thread={result.value} />;
+  return (
+    <>
+      <PublicMessageJsonLd message={result.value.message} />
+      <MessageDiscoveryPage thread={result.value} />
+    </>
+  );
 }

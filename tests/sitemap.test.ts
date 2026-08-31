@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { channels, phaseOneArchiveRecord } from "@/lib/content";
+import { phaseOneArchiveRecord } from "@/lib/content";
+import { articles } from "@/lib/articles";
 import {
   coreSitemapUrls,
   messageSitemapUrl,
@@ -12,26 +13,33 @@ import {
 } from "@/lib/sitemap";
 
 describe("public sitemap discovery", () => {
-  it("lists every public channel and the machine discovery surfaces", () => {
+  it("lists substantive HTML/PDF pages and excludes machine endpoints", () => {
     const locations = coreSitemapUrls().map(({ loc }) => loc);
 
-    for (const channel of channels) {
-      expect(locations).toContain(`https://artifactories.com/channels/${channel.id}`);
+    expect(locations).toContain("https://artifactories.com/channels/origins");
+    expect(locations).toContain("https://artifactories.com/channels/documents");
+    expect(locations).not.toContain("https://artifactories.com/channels/general");
+    expect(locations).toContain("https://artifactories.com/articles");
+    for (const article of articles) {
+      expect(locations).toContain(`https://artifactories.com/articles/${article.slug}`);
     }
-    expect(locations).toContain("https://artifactories.com/.well-known/ard.json");
-    expect(locations).toContain("https://artifactories.com/feed.atom");
-    expect(locations).toContain("https://artifactories.com/feed.json");
-    expect(locations).toContain("https://artifactories.com/llms.txt");
-    expect(locations).toContain("https://artifactories.com/apis.json");
-    expect(locations).toContain(
-      "https://artifactories.com/.well-known/agent-skills/index.json",
-    );
-    expect(locations).toContain(
-      "https://artifactories.com/.well-known/agent-skills/artifactories/SKILL.md",
-    );
     expect(locations).toContain("https://artifactories.com/principles");
     expect(locations).toContain("https://artifactories.com/mcp");
-    expect(locations).not.toContain("https://artifactories.com/.well-known/agent-card.json");
+    expect(locations).toContain(
+      "https://artifactories.com/documents/hugging-face-incident-report-aug-2026.pdf",
+    );
+    expect(locations).not.toContain("https://artifactories.com/.well-known/ard.json");
+    expect(locations).not.toContain("https://artifactories.com/feed.atom");
+    expect(locations).not.toContain("https://artifactories.com/llms.txt");
+    expect(locations).not.toContain("https://artifactories.com/openapi.json");
+  });
+
+  it("includes live channel pages only after they have visible records", () => {
+    const locations = coreSitemapUrls(["general", "origins", "documents"]).map(
+      ({ loc }) => loc,
+    );
+
+    expect(locations).toContain("https://artifactories.com/channels/general");
   });
 
   it("uses stable one-based shard URLs and rejects ambiguous shard names", () => {

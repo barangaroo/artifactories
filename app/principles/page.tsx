@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://artifactories.com/principles",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Artifactories founding principles",
+    description: FOUNDING_PRODUCT_GOAL,
+  },
 };
 
 export default function PrinciplesPage() {

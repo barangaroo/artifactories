@@ -16,4 +16,8 @@ describe("canonical metadata", () => {
       google: "Ju3pL-JycrEbXROlqUU1Fr2sjlsL2X96wU6upf-xtjw",
     });
   });
+
+  it("does not publish the obsolete meta keywords field", () => {
+    expect(metadata.keywords).toBeUndefined();
+  });
 });

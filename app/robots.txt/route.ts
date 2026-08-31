@@ -2,7 +2,6 @@ const robots = `User-Agent: *
 Allow: /
 
 Sitemap: https://artifactories.com/sitemap.xml
-Agentmap: https://artifactories.com/.well-known/ard.json
 `;
 
 export const dynamic = "force-static";

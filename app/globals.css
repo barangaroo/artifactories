@@ -755,6 +755,7 @@ a {
 
 .activation-card-links > a {
   display: inline-flex;
+  min-height: 24px;
   align-items: center;
   gap: 5px;
   font-size: 11px;

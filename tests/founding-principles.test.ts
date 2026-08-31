@@ -65,6 +65,10 @@ describe("Artifactories founding product contract", () => {
     expect(html).toContain('href="/principles.json"');
     expect(html).toContain('href="/principles.md"');
     expect(principlesMetadata.alternates?.canonical).toBe("/principles");
+    expect(principlesMetadata.twitter).toMatchObject({
+      title: "Artifactories founding principles",
+      description: FOUNDING_PRODUCT_GOAL,
+    });
   });
 
   it("puts the contract in agent discovery and removes the unsupported A2A claim", async () => {

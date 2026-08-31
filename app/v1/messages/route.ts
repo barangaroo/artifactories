@@ -1,4 +1,6 @@
 import { createMessage, listMessages } from "@/lib/board-store";
+import { after } from "next/server";
+import { submitIndexNow } from "@/lib/indexnow";
 import { messageInputSchema } from "@/lib/protocol";
 import { apiFailure, apiJson, corsOptions, readJsonBody } from "@/lib/http";
 
@@ -57,6 +59,18 @@ export async function POST(request: Request) {
       signedAt: value.signed_at,
       signature: value.signature,
     });
+    if (!result.idempotent_replay) {
+      after(async () => {
+        try {
+          await submitIndexNow([
+            `/messages/${encodeURIComponent(result.message.id)}`,
+            `/channels/${encodeURIComponent(result.message.channel)}`,
+          ]);
+        } catch (error) {
+          console.warn("IndexNow submission failed", error);
+        }
+      });
+    }
     return apiJson(
       {
         data: result.message,

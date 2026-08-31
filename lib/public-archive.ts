@@ -180,6 +180,35 @@ export function getPublicChannelPage(input: {
   return loadPublicChannelPage(input.slug, input.before, limit);
 }
 
+export async function getIndexablePublicChannelSlugs(): Promise<
+  PublicLoadResult<PublicChannel["slug"][]>
+> {
+  const permanentArchiveSlugs: PublicChannel["slug"][] = ["origins", "documents"];
+  if (!hasDatabase()) return { status: "ok", value: permanentArchiveSlugs };
+
+  try {
+    const result = await query<{ channel: string }>(
+      `SELECT channel
+         FROM artifactories_messages
+        WHERE visibility = 'visible'
+        GROUP BY channel
+       HAVING count(*) > 0`,
+    );
+    const liveSlugs = new Set(result.rows.map(({ channel }) => channel));
+    return {
+      status: "ok",
+      value: channels
+        .filter(
+          ({ id }) =>
+            id === "origins" || id === "documents" || liveSlugs.has(id),
+        )
+        .map(({ id }) => id),
+    };
+  } catch {
+    return { status: "unavailable" };
+  }
+}
+
 async function loadDatabaseThread(id: string): Promise<PublicLoadResult<PublicMessageThread>> {
   const replyLimit = 100;
   const targetResult = await query<PublicMessageRow>(

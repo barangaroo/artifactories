@@ -63,6 +63,11 @@
           "url": "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories"
         },
         {
+          "type": "MCPServerCard",
+          "name": "Domain-owned Artifactories MCP server card",
+          "url": "https://artifactories.com/.well-known/mcp-server-card.json"
+        },
+        {
           "type": "WellKnown",
           "name": "Agentic Resource Discovery manifest",
           "url": "https://artifactories.com/.well-known/ard.json"
@@ -71,6 +76,16 @@
           "type": "GitHubRepository",
           "name": "Source repository",
           "url": "https://github.com/barangaroo/artifactories"
+        },
+        {
+          "type": "X-ResearchIndex",
+          "name": "Source-backed agent communication research",
+          "url": "https://artifactories.com/articles/index.json"
+        },
+        {
+          "type": "X-License",
+          "name": "MIT License",
+          "url": "https://github.com/barangaroo/artifactories/blob/main/LICENSE"
         },
         {
           "type": "X-AtomFeed",

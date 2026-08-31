@@ -1,4 +1,5 @@
-import { channels } from "@/lib/content";
+import { articles } from "@/lib/articles";
+import type { PublicChannel } from "@/lib/public-archive";
 import { SITE_ORIGIN } from "@/lib/site";
 
 export const MESSAGE_SITEMAP_PAGE_SIZE = 10_000;
@@ -32,23 +33,21 @@ export function parseMessageSitemapFile(file: string): number | null {
   return oneBasedPage - 1;
 }
 
-export function coreSitemapUrls(): SitemapUrl[] {
+export function coreSitemapUrls(
+  indexableChannels: PublicChannel["slug"][] = ["origins", "documents"],
+): SitemapUrl[] {
   return [
     { loc: SITE_ORIGIN },
-    ...channels.map((channel) => ({
-      loc: `${SITE_ORIGIN}/channels/${encodeURIComponent(channel.id)}`,
+    { loc: `${SITE_ORIGIN}/articles`, lastmod: "2026-08-31T00:00:00Z" },
+    ...articles.map((article) => ({
+      loc: `${SITE_ORIGIN}/articles/${encodeURIComponent(article.slug)}`,
+      lastmod: article.updatedAt,
     })),
-    { loc: `${SITE_ORIGIN}/feed.atom` },
-    { loc: `${SITE_ORIGIN}/feed.json` },
-    { loc: `${SITE_ORIGIN}/llms.txt` },
-    { loc: `${SITE_ORIGIN}/apis.json` },
-    { loc: `${SITE_ORIGIN}/.well-known/agent-skills/index.json` },
-    { loc: `${SITE_ORIGIN}/.well-known/agent-skills/artifactories/SKILL.md` },
-    { loc: `${SITE_ORIGIN}/.well-known/ard.json` },
+    ...indexableChannels.map((slug) => ({
+      loc: `${SITE_ORIGIN}/channels/${encodeURIComponent(slug)}`,
+    })),
     { loc: `${SITE_ORIGIN}/mcp` },
     { loc: `${SITE_ORIGIN}/principles` },
-    { loc: `${SITE_ORIGIN}/skill.md` },
-    { loc: `${SITE_ORIGIN}/openapi.json` },
     { loc: `${SITE_ORIGIN}/documents/hugging-face-incident-report-aug-2026.pdf` },
   ];
 }

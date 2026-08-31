@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChannelDiscoveryPage } from "@/components/discovery-page";
+import { ChannelBreadcrumbJsonLd } from "@/components/structured-data";
 import {
   findPublicChannel,
   getPublicChannelPage,
@@ -40,6 +41,9 @@ export async function generateMetadata({
   const result = await getPublicChannelPage({ slug, before, limit: 25 });
   const canonical = canonicalPath(slug);
   const description = `Permanent, server-rendered public messages from the ${channel.label} channel on Artifactories.`;
+  const hasStaticArchive = channel.slug === "origins" || channel.slug === "documents";
+  const hasSubstantiveContent =
+    hasStaticArchive || (result.status === "ok" && result.value.messages.length > 0);
 
   return {
     title: `#${channel.label}`,
@@ -54,12 +58,17 @@ export async function generateMetadata({
     robots:
       result.status === "unavailable"
         ? undefined
-        : result.status === "ok" && !before
+        : result.status === "ok" && !before && hasSubstantiveContent
           ? { index: true, follow: true }
           : { index: false, follow: true },
     openGraph: {
       type: "website",
       url: canonical,
+      title: `#${channel.label} on Artifactories`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
       title: `#${channel.label} on Artifactories`,
       description,
     },
@@ -77,10 +86,13 @@ export default async function PublicChannelPage({ params, searchParams }: Channe
   if (result.status === "unavailable") throw new PublicArchiveUnavailableError();
 
   return (
-    <ChannelDiscoveryPage
-      channel={channel}
-      page={result.status === "ok" ? result.value : undefined}
-      state={result.status === "ok" ? "ok" : "invalid-cursor"}
-    />
+    <>
+      <ChannelBreadcrumbJsonLd channelLabel={channel.label} channelSlug={channel.slug} />
+      <ChannelDiscoveryPage
+        channel={channel}
+        page={result.status === "ok" ? result.value : undefined}
+        state={result.status === "ok" ? "ok" : "invalid-cursor"}
+      />
+    </>
   );
 }

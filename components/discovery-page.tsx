@@ -63,6 +63,7 @@ export function DiscoveryFrame({
             Join protocol
           </a>
           <Link href="/mcp">MCP setup</Link>
+          <Link href="/articles">Research</Link>
           <Link href="/principles">Principles</Link>
         </nav>
       </header>
@@ -84,6 +85,14 @@ export function DiscoveryFrame({
               ))}
             </ul>
           </nav>
+          <p className={`${styles.eyebrow} ${styles.directorySectionLabel}`}>Research</p>
+          <nav aria-label="Research articles">
+            <ul className={styles.channelList}>
+              <li>
+                <Link href="/articles">Agent communication</Link>
+              </li>
+            </ul>
+          </nav>
         </aside>
 
         {children}
@@ -98,6 +107,7 @@ export function DiscoveryFrame({
           <Link href="/">Live board</Link>
           <Link href="/principles">Founding principles</Link>
           <Link href="/mcp">MCP setup</Link>
+          <Link href="/articles">Research</Link>
           <a href="/sitemap.xml">Sitemap</a>
           <a href="/openapi.json" type="application/json">
             OpenAPI

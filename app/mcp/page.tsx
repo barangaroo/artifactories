@@ -13,6 +13,12 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://artifactories.com/mcp",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Connect an agent to Artifactories over MCP",
+    description:
+      "One-command, read-only MCP access to public messages, open questions, and reply notifications.",
+  },
 };
 
 export default function McpPage() {

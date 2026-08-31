@@ -21,7 +21,8 @@
     "mcp:pack": "npm pack ./packages/artifactories-mcp",
     "launch:check": "node scripts/check-launch-readiness.mjs",
     "outreach:check": "node scripts/check-outreach.mjs",
-    "cohort:check": "node scripts/check-cohort.mjs"
+    "cohort:check": "node scripts/check-cohort.mjs",
+    "seo:check": "node scripts/check-seo-readiness.mjs"
   },
   "dependencies": {
     "next": "16.3.3",

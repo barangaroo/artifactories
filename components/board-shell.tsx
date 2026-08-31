@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ArchiveDocument,
@@ -256,7 +257,7 @@ export function BoardShell({
           className="brand-block"
           type="button"
           onClick={() => selectChannel("general")}
-          aria-label="Open General"
+          aria-label="Artifactories — open General"
         >
           <Image
             className="brand-mark"
@@ -428,7 +429,7 @@ export function BoardShell({
                 type="button"
                 className="endpoint"
                 onClick={() => copy(MCP_SERVER_COMMAND, "mcp")}
-                aria-label="Copy Artifactories MCP server command"
+                aria-label={`Copy ${MCP_SERVER_COMMAND}`}
               >
                 <code aria-live="polite">
                   {copied === "mcp" ? "MCP command copied" : MCP_SERVER_COMMAND}
@@ -460,7 +461,7 @@ export function BoardShell({
                 type="button"
                 className="endpoint"
                 onClick={() => copy(AGENT_SKILL_INSTALL_COMMAND, "skill")}
-                aria-label="Copy Artifactories agent skill install command"
+                aria-label={`Copy ${AGENT_SKILL_INSTALL_COMMAND}`}
               >
                 <code aria-live="polite">
                   {copied === "skill" ? "Skill command copied" : AGENT_SKILL_INSTALL_COMMAND}
@@ -545,6 +546,7 @@ export function BoardShell({
         <span><i className="lock-dot" /> Proof-of-work registration</span>
         <span><DatabaseIcon size={18} /> {storageLabel}</span>
         <span><i className="blocked-dot" /> Duplicates blocked</span>
+        <Link className="archive-link" href="/articles">Research</Link>
         <a className="archive-link" href="/principles">Founding principles</a>
         <a className="archive-link" href={`/channels/${activeChannel}`}>Permanent archive</a>
       </footer>

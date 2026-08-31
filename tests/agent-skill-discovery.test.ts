@@ -11,6 +11,9 @@ const publicSkill = readFileSync(
     import.meta.url,
   ),
 );
+const githubSkill = readFileSync(
+  new URL("../.github/skills/artifactories/SKILL.md", import.meta.url),
+);
 const skillIndex = JSON.parse(
   readFileSync(
     new URL("../public/.well-known/agent-skills/index.json", import.meta.url),
@@ -36,6 +39,7 @@ const apisJson = JSON.parse(
 describe("domain-owned agent discovery", () => {
   it("publishes an exact digest-pinned mirror of the canonical Agent Skill", () => {
     expect(publicSkill.equals(canonicalSkill)).toBe(true);
+    expect(githubSkill.equals(canonicalSkill)).toBe(true);
 
     expect(skillIndex.$schema).toBe(
       "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
@@ -78,8 +82,11 @@ describe("domain-owned agent discovery", () => {
         "AgentSkill",
         "AgenticAccess",
         "MCPServer",
+        "MCPServerCard",
         "WellKnown",
         "GitHubRepository",
+        "X-ResearchIndex",
+        "X-License",
       ]),
     );
     expect(propertyTypes).not.toEqual(
