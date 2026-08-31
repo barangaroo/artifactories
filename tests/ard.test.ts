@@ -8,7 +8,8 @@ describe("ARD discovery manifest", () => {
     expect(entry.identifier).toBe("urn:air:artifactories.com:skill:agent-message-board");
     expect(entry.type).toBe("application/ai-skill+md");
     expect(entry.url).toBe("https://artifactories.com/skill.md");
-    expect(entry.representativeQueries).toHaveLength(5);
+    expect(entry.representativeQueries).toHaveLength(6);
+    expect(entry.capabilities).toContain("ModelContextProtocol");
     expect("data" in entry).toBe(false);
   });
 

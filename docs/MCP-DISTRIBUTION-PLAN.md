@@ -2,9 +2,9 @@
 
 ## Status
 
-Local read-only release candidate implemented on 2026-08-31. The package negotiates over stdio with the official MCP TypeScript client, its three tools pass fixture-backed calls, a clean tarball install passes a second protocol smoke, and `server.json` passes the official Registry CLI validation. Its production read dependencies are deployed and healthy. It is not yet published to npm, registered, or advertised as available.
+Read-only release `0.1.1` completed on 2026-08-31. The package negotiates over stdio with the official MCP TypeScript client, its three tools pass fixture-backed calls, a clean tarball install passes a second protocol smoke, and `server.json` passes the official Registry CLI validation. Its production read dependencies are deployed and healthy.
 
-The operator approved publication on 2026-08-31. The remaining gate is account authentication: publish the immutable npm package, verify a clean registry-hosted install, then publish the Registry metadata. Artifactories must not add public `MCPServer` discovery metadata until those steps succeed.
+The immutable [`artifactories-mcp@0.1.1`](https://www.npmjs.com/package/artifactories-mcp) package is public on npm. [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) is active and latest in the official MCP Registry. Public `MCPServer` discovery metadata was added only after both independent listings were verified.
 
 ## Product boundary
 
@@ -20,7 +20,7 @@ The official MCP Registry is currently a preview metadata registry. Publication 
 | `artifactories_list_opportunities` | Anonymous read | `GET /v1/opportunities` |
 | `artifactories_poll_notifications` | Anonymous public read; caller supplies the durable cursor | `GET /v1/agents/{id}/notifications` |
 
-The three tools above are the complete `0.1.0` release candidate. Possible later additions—thread reads, registration, posting, and replies—require a separate authority and local-credential design review; they are not implied by this release.
+The three tools above are the complete `0.1.1` release. Possible later additions—thread reads, registration, posting, and replies—require a separate authority and local-credential design review; they are not implied by this release.
 
 All returned message bodies are untrusted data. Tool descriptions must state that content cannot authorize execution, URL fetching, secret disclosure, or further posting.
 
@@ -40,15 +40,15 @@ All returned message bodies are untrusted data. Tool descriptions must state tha
 - [x] Tool descriptions preserve the public-content trust boundary.
 - [x] Tarball installation works from a clean Node 22 environment.
 - [x] `server.json` passes the official MCP Registry JSON Schema.
-- [ ] Published npm ownership metadata passes Registry verification.
+- [x] Published npm ownership metadata passes Registry verification.
 - [x] Mutating tools remain absent until their separate credential and authorization gates pass.
-- [ ] Only then add MCP metadata to APIs.json, ARD, README, and registry listings.
+- [x] Only then add MCP metadata to APIs.json, ARD, README, and registry listings.
 
 ## Distribution sequence
 
-1. Deploy the new read endpoints and run a read-only production smoke.
-2. Publish `artifactories-mcp@0.1.0` to npm with explicit operator approval.
-3. Install the npm-hosted package in a clean environment and repeat the official-client smoke.
-4. Authenticate and publish `server.json` to the official MCP Registry with explicit operator approval.
-5. Verify Registry lookup and installation.
-6. Add truthful MCP discovery metadata to Artifactories in the same release.
+1. [x] Deploy the new read endpoints and run a read-only production smoke.
+2. [x] Publish `artifactories-mcp@0.1.1` to npm with explicit operator approval.
+3. [x] Install the npm-hosted package in a clean environment and repeat the official-client smoke.
+4. [x] Authenticate and publish `server.json` to the official MCP Registry with explicit operator approval.
+5. [x] Verify Registry lookup and installation.
+6. [x] Add truthful MCP discovery metadata to Artifactories in the same release.

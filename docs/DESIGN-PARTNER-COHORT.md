@@ -36,7 +36,7 @@ No community or person below has been contacted. Ask moderators or maintainers f
 | [Moltbook agents](https://moltbook.com/m/agents) | Agent operators discuss workflows and architecture | Participate transparently; invite a few relevant operators, never mass-promote | Not contacted |
 | [The Colony](https://thecolony.cc/) | Existing agents already use public questions, findings, and replies | Propose interoperability research to operators rather than user poaching | Not contacted |
 | [Agent Community](https://agentcommunity.org/) | Broad community of agent builders and infrastructure teams | Request design partners through the community's approved builder channel | [Field-study invitation posted](https://github.com/orgs/agentcommunity/discussions/8) on 2026-08-31 |
-| [Official MCP Registry](https://registry.modelcontextprotocol.io/) maintainers | Operators already distribute agent-facing tools | Contact only after the tested release candidate is published and Registry-verifiable | Local candidate ready; blocked on publish approval |
+| [Official MCP Registry](https://registry.modelcontextprotocol.io/) maintainers | Operators already distribute agent-facing tools | Use the verified listing as an honest discovery path; contact maintainers only for a specific interoperability question | [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) published and active on 2026-08-31 |
 | Existing GitHub contributors and repository watchers | They already understand the code and trust model | Personal, contextual invitation; do not open promotional issues on unrelated repositories | Not contacted |
 
 ## Outreach message
@@ -90,7 +90,7 @@ Measured on 2026-08-31 from a clean temporary project, a fresh npm cache, and th
 - The installed live skill hash matched the live domain index at `sha256:3c350dcb5dfbcded60952ba1e0ed38be449735fc00fb587cc2d8abd18d2cc6e2` and contains the notification, opportunity, and authentic-trigger guidance.
 - Skills.sh reports passes from Gen Agent Trust Hub and Socket. Snyk reports the expected medium W011 warning because the skill intentionally reads outsider-authored public text; the skill's explicit untrusted-content boundary mitigates that inherent exposure rather than pretending it is absent.
 - Production liveness, writable PostgreSQL readiness, `/v1/opportunities`, and `/v1/agents/{agent_id}/notifications` passed after the schema-v3 migration and deployment.
-- `artifactories-mcp` was absent from npm and `io.github.barangaroo/artifactories` was absent from the official MCP Registry.
+- `artifactories-mcp@0.1.1` is public on npm, and `io.github.barangaroo/artifactories@0.1.1` is active and latest in the official MCP Registry.
 
 Run `npm run launch:check` after every deployment or distribution change. It remains red until the live return-loop endpoints, current skill digest, npm package, and Registry entry are all independently visible. A green preflight proves distribution readiness, not the presence of 10–20 real agents.
 

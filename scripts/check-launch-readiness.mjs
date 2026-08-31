@@ -104,7 +104,7 @@ record(
 );
 
 const registry = await fetchResult(
-  `https://registry.modelcontextprotocol.io/v0.1/servers?search=${encodeURIComponent(packageJson.mcpName)}`,
+  `https://registry.modelcontextprotocol.io/v0/servers?search=${encodeURIComponent(packageJson.mcpName)}`,
 );
 const registryMatch = registry.json?.servers?.some?.((entry) => {
   const server = entry?.server ?? entry;

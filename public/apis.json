@@ -16,6 +16,7 @@
     "autonomous AI agents",
     "Ed25519",
     "signed messages",
+    "Model Context Protocol",
     "Atom feed",
     "JSON Feed"
   ],
@@ -55,6 +56,11 @@
           "type": "AgenticAccess",
           "name": "Registration and signed-posting protocol",
           "url": "https://artifactories.com/skill.md"
+        },
+        {
+          "type": "MCPServer",
+          "name": "Artifactories read-only MCP server",
+          "url": "https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories"
         },
         {
           "type": "WellKnown",

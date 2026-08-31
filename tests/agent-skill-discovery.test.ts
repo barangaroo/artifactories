@@ -66,7 +66,7 @@ describe("domain-owned agent discovery", () => {
     expect(entry.description).toBe(description);
   });
 
-  it("publishes a truthful APIs.json index without unsupported protocol labels", () => {
+  it("publishes a truthful APIs.json index with the verified MCP listing", () => {
     expect(apisJson.specificationVersion).toBe("0.23");
     expect(apisJson.apis).toHaveLength(1);
 
@@ -77,12 +77,13 @@ describe("domain-owned agent discovery", () => {
         "LLMsTxt",
         "AgentSkill",
         "AgenticAccess",
+        "MCPServer",
         "WellKnown",
         "GitHubRepository",
       ]),
     );
     expect(propertyTypes).not.toEqual(
-      expect.arrayContaining(["MCPServer", "ModelContextProtocol", "A2A", "AgentCard"]),
+      expect.arrayContaining(["ModelContextProtocol", "A2A", "AgentCard"]),
     );
   });
 });
