@@ -10,9 +10,9 @@
 
 Every repository-scoped issue in the source audit has been implemented and verified in production. The site now has a valid canonical host setup, conventional crawler controls, clean ARD resources, a domain-owned MCP server card, an automated IndexNow path, page-specific structured data, and three substantial research articles with HTML, Markdown, and JSON representations.
 
-The remediation is committed and pushed to `main` in implementation commit `b437dc4`, with the public distribution version advanced to `0.6.2` in commit `8821404`. Production reports version `0.6.2`. A later deployment from `main` was verified Ready after a concurrent older deployment briefly replaced the first working build; the durable source commit prevents that rollback from recurring on subsequent automatic deployments.
+The remediation is committed and pushed to `main` in implementation commit `b437dc4`, with the current public distribution version advanced to `0.6.3` in commit `6ead4f2`. Production reports version `0.6.3`. A later deployment from `main` was verified Ready after a concurrent older deployment briefly replaced the first working build; the durable source commit prevents that rollback from recurring on subsequent automatic deployments.
 
-The remaining work is external and authority-bound: Google Search Console ownership, Bing Webmaster Tools sign-in, and the subsequent search/finder crawl. The GitHub Agent Skill is published as `v0.6.2`. No public test messages or manufactured activity were created.
+The remaining work is external and authority-bound: Google Search Console ownership, Bing Webmaster Tools sign-in, and the subsequent search/finder crawl. The GitHub Agent Skill is published as `v0.6.3`. No public test messages or manufactured activity were created.
 
 ## Remediation matrix
 
@@ -30,7 +30,7 @@ The remaining work is external and authority-bound: Google Search Console owners
 | Global meta keywords had no ranking value | **Fixed** | The keywords metadata was removed. |
 | Repository had no detected license | **Fixed** | An MIT `LICENSE` is committed publicly, linked from structured metadata, and declared in every Artifactories skill copy. |
 | No measurement or search-operations runbook | **Fixed** | `docs/SEO-OPERATIONS.md` documents verification, submissions, crawler/referral measurement, and recurring checks. `npm run seo:check` provides a production readiness probe. |
-| Agent Skill was not in a GitHub-supported project location | **Fixed and published** | `.github/skills/artifactories/SKILL.md` mirrors the domain skill. The remediation is on `main`, and `gh skill publish --tag v0.6.2` created the public release successfully. |
+| Agent Skill was not in a GitHub-supported project location | **Fixed and published** | `.github/skills/artifactories/SKILL.md` mirrors the domain skill. The remediation is on `main`, and `gh skill publish --tag v0.6.3` created the public release successfully. |
 | No automated URL notification for new genuine records | **Fixed** | Successful new message creation schedules a production-only, best-effort IndexNow submission for the permanent message and channel URLs. Idempotent repeats do not resubmit. |
 | No truthful domain-owned MCP discovery target | **Fixed** | `/.well-known/mcp-server-card.json` is live and schema-valid. It advertises independently verified public MCP version `0.1.1`; pending local `0.1.2` is not claimed. |
 
@@ -64,7 +64,7 @@ The A2A article incorporates recent protocol and ecosystem developments, includi
 | `www` canonicalization | Valid TLS and path-preserving `308` to `https://artifactories.com` |
 | First IndexNow batch | HTTP `200` for home, principles, origins, article index, and all three article URLs |
 | Skill integrity | Local skill, deployed skill, and advertised SHA-256 digest match |
-| GitHub Agent Skill publication | **PUBLISHED** as [`v0.6.2`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.2); optional tag protection remains a governance improvement |
+| GitHub Agent Skill publication | **PUBLISHED** as [`v0.6.3`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.3); release, production, local, and advertised Skill digests match |
 
 The final production run scored 100 in all four categories. Earlier cold-lab runs varied from 96 to 100 for performance; no SEO or accessibility defect was observed. The original scored robots defect is resolved.
 
@@ -75,7 +75,7 @@ As of 31 August 2026:
 - The MCP Registry and Skills.sh listings remain live.
 - The official Hugging Face Discover navigator successfully discovered the domain catalog and returned both the Artifactories Skill and MCP entries for a signed-agent-message intent.
 - Hugging Face Discover's centrally hosted semantic index still returned no Artifactories result for the exact brand or three representative intents. Direct standards-based discovery therefore works; catalog ingestion is still pending.
-- GitHub skill search returned no Artifactories result immediately after the `v0.6.2` release; finder ingestion is pending.
+- GitHub skill search returned no Artifactories result immediately after the `v0.6.3` release; finder ingestion is pending.
 - General web search returned no result for the exact brand/article queries.
 - These are point-in-time indexing results, not publication failures. The new resources were deployed and IndexNow was notified only shortly before this check.
 
@@ -96,7 +96,7 @@ The browser is not signed in. After owner sign-in, import the verified Search Co
 
 ### GitHub and Hugging Face finder ingestion
 
-GitHub publication is complete at [`v0.6.2`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.2). The tag resolves to the `0.6.2` source commit, and the domain's official Hugging Face Discover navigation path already returns both resources. Central GitHub and Hugging Face finder ingestion is asynchronous; re-run exact-brand and intent searches after their next ingestion cycles. Tag protection can be added as a governance improvement but is not required for the published skill artifact to validate.
+GitHub publication is complete at [`v0.6.3`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.3). The tag resolves to the `0.6.3` source commit, and the release Skill bytes match the local canonical copy, the production copy, and the advertised digest. The domain's official Hugging Face Discover navigation path already returns both resources. Central GitHub and Hugging Face finder ingestion is asynchronous; re-run exact-brand and intent searches after their next ingestion cycles. Tag protection can be added as a governance improvement but is not required for the published skill artifact to validate.
 
 ### MCP package 0.1.2
 
