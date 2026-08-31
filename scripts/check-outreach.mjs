@@ -66,7 +66,7 @@ const QUERY = `query {
   agentFramework: repository(owner: "microsoft", name: "agent-framework") {
     discussion(number: 7970) { url updatedAt upvoteCount comments(first: 100) { nodes { author { login } createdAt url } } }
   }
-  colonyTemplate: repository(owner: "TheColonyCC", name: "colony-agent-template") {
+  camelFallback: repository(owner: "camel-ai", name: "camel") {
     url
     discussionCategories(first: 20) { nodes { name slug } }
   }
@@ -129,15 +129,15 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
   const independentResponderCount = [
     ...new Set(channels.flatMap(({ independentResponders }) => independentResponders)),
   ].length;
-  const colonyShowAndTellAvailable = data.colonyTemplate?.discussionCategories?.nodes?.some(
+  const camelShowAndTellAvailable = data.camelFallback?.discussionCategories?.nodes?.some(
     ({ slug }) => slug === "show-and-tell",
   );
-  const colonyFallbackStatus =
+  const camelFallbackStatus =
     independentResponderCount >= FALLBACK_RESPONSE_THRESHOLD
       ? "not_needed"
       : checkedDate < FALLBACK_AFTER
         ? "date_hold"
-        : colonyShowAndTellAvailable
+        : camelShowAndTellAvailable
           ? "eligible"
           : "channel_unavailable";
 
@@ -151,21 +151,21 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
       independentResponders: independentResponderCount,
       followupsDue: channels.filter(({ status }) => status === "followup_due").length,
       permissionHolds: channels.filter(({ status }) => status === "permission_hold").length,
-      fallbacksEligible: colonyFallbackStatus === "eligible" ? 1 : 0,
+      fallbacksEligible: camelFallbackStatus === "eligible" ? 1 : 0,
     },
     channels,
     fallbacks: [
       {
-        name: "The Colony agent-template Show and tell",
+        name: "CAMEL Show and tell",
         url:
-          data.colonyTemplate?.url
-            ? `${data.colonyTemplate.url}/discussions/categories/show-and-tell`
-            : "https://github.com/TheColonyCC/colony-agent-template/discussions/categories/show-and-tell",
-        status: colonyFallbackStatus,
+          data.camelFallback?.url
+            ? `${data.camelFallback.url}/discussions/categories/show-and-tell`
+            : "https://github.com/camel-ai/camel/discussions/categories/show-and-tell",
+        status: camelFallbackStatus,
         eligibleAfter: FALLBACK_AFTER,
         requiresFewerThanIndependentResponders: FALLBACK_RESPONSE_THRESHOLD,
         currentIndependentResponders: independentResponderCount,
-        channelAvailable: Boolean(colonyShowAndTellAvailable),
+        channelAvailable: Boolean(camelShowAndTellAvailable),
       },
     ],
   };

@@ -27,8 +27,8 @@ function fixture() {
     agentCommunity: discussion(),
     googleAdk: discussion(),
     agentFramework: discussion(),
-    colonyTemplate: {
-      url: "https://github.com/TheColonyCC/colony-agent-template",
+    camelFallback: {
+      url: "https://github.com/camel-ai/camel",
       discussionCategories: {
         nodes: [{ name: "Show and tell", slug: "show-and-tell" }],
       },
@@ -61,6 +61,8 @@ describe("outreach status checker", () => {
     expect(report.metrics.followupsDue).toBe(0);
     expect(report.metrics.fallbacksEligible).toBe(0);
     expect(report.fallbacks[0]).toMatchObject({
+      name: "CAMEL Show and tell",
+      url: "https://github.com/camel-ai/camel/discussions/categories/show-and-tell",
       status: "date_hold",
       channelAvailable: true,
     });
@@ -142,7 +144,7 @@ describe("outreach status checker", () => {
 
   it("holds the fallback when the designated category disappears", () => {
     const data = fixture();
-    data.colonyTemplate.discussionCategories.nodes = [];
+    data.camelFallback.discussionCategories.nodes = [];
 
     const report = buildOutreachReport(data, new Date("2026-09-07T00:00:00.000Z"));
 
