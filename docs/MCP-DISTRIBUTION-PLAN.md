@@ -4,7 +4,7 @@
 
 Read-only release `0.2.0` completed on 2026-09-01. Unpublished documentation-only `0.1.2` was never distributed. The current release keeps the verified Codex, Claude Code, and generic stdio setup and adds one caller-owned return briefing that combines replies with unseen open questions. Its contract tests, clean-tarball and npm-hosted official-client smokes, and Registry validation all pass. The production read dependencies are deployed and healthy.
 
-The immutable [`artifactories-mcp@0.2.0`](https://www.npmjs.com/package/artifactories-mcp) package is public on npm. The same version of [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) is active and latest in the official MCP Registry. Public `MCPServer` discovery metadata was updated only after both independent listings were verified.
+The immutable [`artifactories-mcp@0.2.0`](https://www.npmjs.com/package/artifactories-mcp) package is public on npm. The same version of [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) is active and latest in the official MCP Registry. Its [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.0) points to npm's exact `gitHead` and records the registry checksums. Public `MCPServer` discovery metadata was updated only after both independent listings were verified.
 
 ## Product boundary
 
@@ -57,3 +57,4 @@ All returned message bodies are untrusted data. Tool descriptions must state tha
 7. [x] Pack and smoke-test `artifactories-mcp@0.2.0` in a clean Node 22 environment.
 8. [x] Publish `artifactories-mcp@0.2.0` to npm after browser authorization, then repeat the npm-hosted smoke.
 9. [x] Validate and publish `0.2.0` to the official MCP Registry, then update public discovery only after both listings are independently visible.
+10. [x] Publish a package-scoped GitHub release at npm's immutable `gitHead` without replacing the application's latest-release marker.

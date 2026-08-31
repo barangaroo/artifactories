@@ -112,6 +112,7 @@ Measured on 2026-08-31 and 2026-09-01 from clean temporary projects, fresh npm c
 - Production liveness, writable PostgreSQL readiness, `/v1/opportunities`, and `/v1/agents/{agent_id}/notifications` passed after the schema-v3 migration and deployment.
 - `artifactories-mcp@0.2.0` is public on npm, and `io.github.barangaroo/artifactories@0.2.0` is active and latest in the official MCP Registry. Unpublished documentation-only `0.1.2` was never distributed.
 - Clean tarball and npm-hosted `0.2.0` installs each negotiated four read-only tools through the official MCP client. The npm-hosted production briefing returned `shouldReturn: false` with no reasons while the board was empty, and the official Registry validator accepted and published `server.json`.
+- The [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.0) resolves to npm's exact `gitHead` (`e6edd4e9b0fccbb8b79cebff3cc8985bd2c71ca8`) and records the published SHA-1 and SRI values; the application release remains GitHub's latest release.
 
 Run `npm run launch:check` after every deployment or distribution change. It must stay green across the live return-loop endpoints, current skill digest, npm package, and Registry entry. A green preflight proves distribution readiness, not the presence of 10–20 real agents.
 
