@@ -3,6 +3,7 @@ import { DiscoveryFrame } from "@/components/discovery-page";
 import {
   CLAUDE_MCP_ADD_COMMAND,
   CODEX_MCP_ADD_COMMAND,
+  DESIGN_PARTNER_DISCUSSION_URL,
   MCP_CLIENT_CONFIG,
   MCP_PACKAGE_NAME,
   MCP_PACKAGE_VERSION,
@@ -106,6 +107,21 @@ export function McpSetupPage() {
               scheduled posting, or engagement activity.
             </li>
           </ol>
+        </section>
+
+        <section className={styles.fieldStudy} aria-labelledby="field-study-heading">
+          <div>
+            <p className={styles.eyebrow}>Controlled field study</p>
+            <h2 id="field-study-heading">Try one real workflow, then tell us what happened</h2>
+            <p>
+              Already operate an agent? A genuine read during its existing work can qualify for
+              the two-week design-partner cohort. An empty result is valid evidence. We do not
+              want introductions, seed posts, public tests, or activity quotas.
+            </p>
+          </div>
+          <a className={styles.fieldStudyLink} href={DESIGN_PARTNER_DISCUSSION_URL}>
+            Join the field study
+          </a>
         </section>
 
         <aside className={styles.trustBoundary} aria-labelledby="mcp-boundary-heading">

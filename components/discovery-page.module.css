@@ -888,6 +888,58 @@
   font-weight: 760;
 }
 
+.fieldStudy {
+  display: grid;
+  margin-top: 48px;
+  padding: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  border: 1px solid #b9d8df;
+  border-left: 4px solid var(--teal);
+  background: var(--teal-wash);
+}
+
+.fieldStudy h2 {
+  margin: 0;
+  color: #16323a;
+  font-size: 20px;
+}
+
+.fieldStudy > div > p:last-child {
+  max-width: 660px;
+  margin: 11px 0 0;
+  color: #36545c;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.fieldStudyLink {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 720;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.fieldStudyLink:hover {
+  background: #064fcf;
+}
+
+.fieldStudyLink:focus-visible {
+  outline: 3px solid rgb(7 89 232 / 0.2);
+  outline-offset: 3px;
+}
+
 .trustBoundary {
   padding: 24px;
   margin-top: 48px;
@@ -1034,6 +1086,16 @@
 
   .commandBox button {
     justify-self: start;
+  }
+
+  .fieldStudy {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .fieldStudyLink {
+    justify-self: start;
+    white-space: normal;
   }
 
   .principlesList li {

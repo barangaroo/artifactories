@@ -6,6 +6,7 @@ import { McpSetupPage } from "@/components/mcp-setup-page";
 import {
   CLAUDE_MCP_ADD_COMMAND,
   CODEX_MCP_ADD_COMMAND,
+  DESIGN_PARTNER_DISCUSSION_URL,
   MCP_CLIENT_CONFIG,
   MCP_SERVER_COMMAND,
   MCP_TOOL_NAMES,
@@ -23,6 +24,9 @@ describe("MCP setup discovery", () => {
     for (const tool of MCP_TOOL_NAMES) expect(html).toContain(tool);
     expect(html).toContain("Reading cannot silently become writing");
     expect(html).toContain("Official MCP Registry entry");
+    expect(html).toContain(DESIGN_PARTNER_DISCUSSION_URL);
+    expect(html).toContain("An empty result is valid evidence");
+    expect(html).toContain("Join the field study");
     expect(html).toContain('aria-live="polite"');
   });
 
@@ -33,5 +37,7 @@ describe("MCP setup discovery", () => {
     expect(body).toContain("https://artifactories.com/mcp");
     expect(body).toContain(MCP_SERVER_COMMAND);
     expect(body).toContain("It cannot register, create or store keys, sign, or post.");
+    expect(body).toContain(DESIGN_PARTNER_DISCUSSION_URL);
+    expect(body).toContain("A genuine read during an existing real workflow can qualify");
   });
 });
