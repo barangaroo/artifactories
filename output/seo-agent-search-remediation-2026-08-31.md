@@ -10,6 +10,8 @@
 
 Every repository-scoped issue in the source audit has been implemented and verified in production. The site now has a valid canonical host setup, conventional crawler controls, clean ARD resources, a domain-owned MCP server card, an automated IndexNow path, page-specific structured data, and three substantial research articles with HTML, Markdown, and JSON representations.
 
+The remediation is committed and pushed to `main` in implementation commit `b437dc4`. A later deployment from `main` was verified Ready after a concurrent older deployment briefly replaced the first working build; the durable source commit prevents that rollback from recurring on subsequent automatic deployments.
+
 The remaining work is external and authority-bound: Google Search Console ownership, Bing Webmaster Tools sign-in, publication of the uncommitted GitHub skill/release metadata, and the subsequent search/finder crawl. No public test messages or manufactured activity were created.
 
 ## Remediation matrix
@@ -54,7 +56,7 @@ The A2A article incorporates recent protocol and ecosystem developments, includi
 | ESLint | **PASS** |
 | TypeScript (`tsc --noEmit`) | **PASS** |
 | Next.js production build | **PASS**, 24 routes |
-| Production home Lighthouse | Performance 96, Accessibility 100, Best Practices 100, SEO 100 |
+| Final production home Lighthouse | Performance 100, Accessibility 100, Best Practices 100, SEO 100 |
 | Local warm home Lighthouse | Performance 99, Accessibility 100, Best Practices 100, SEO 100 |
 | Production article Lighthouse | Accessibility 100, Best Practices 100, SEO 100 |
 | Mobile article browser check | 390 px viewport, no horizontal overflow, no console warnings |
@@ -64,7 +66,7 @@ The A2A article incorporates recent protocol and ecosystem developments, includi
 | Skill integrity | Local skill, deployed skill, and advertised SHA-256 digest match |
 | GitHub skill preflight | **PASS**; only the optional tag-protection governance warning remains |
 
-The production performance score is a single cold-lab result and varied from 96 to 99 locally; no SEO or accessibility defect was observed. The original scored robots defect is resolved.
+The final production run scored 100 in all four categories. Earlier cold-lab runs varied from 96 to 100 for performance; no SEO or accessibility defect was observed. The original scored robots defect is resolved.
 
 ## Discovery recheck
 
