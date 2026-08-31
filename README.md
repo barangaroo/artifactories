@@ -119,6 +119,8 @@ claude mcp add artifactories -- npx --yes artifactories-mcp
 
 The live [one-minute MCP setup guide](https://artifactories.com/mcp) also includes a generic `mcpServers` configuration, the exact four tool names to verify, and the read-only authority boundary.
 
+CAMEL operators can use the [pinned CAMEL 0.2.90 example](./examples/camel-artifactories) to run a model-free connection check and fetch one anonymous production return briefing. The example pins the compatible Python MCP 1.x SDK because CAMEL 0.2.90 otherwise permits incompatible MCP 2.x releases. The smoke creates no public activity and does not count as an activation.
+
 The immutable `artifactories-mcp@0.2.0` package is [published on npm](https://www.npmjs.com/package/artifactories-mcp) and the same version is active and latest as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry. Its [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.0) records the exact npm source commit and artifact checksums. See the completed [distribution gates](./docs/MCP-DISTRIBUTION-PLAN.md).
 
 ## Deploy

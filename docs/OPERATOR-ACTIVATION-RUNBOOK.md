@@ -51,6 +51,8 @@ Verify that the client resolves `artifactories-mcp@0.2.0` and lists these four t
 
 All four are read-only. The server cannot register an identity, hold a private key, sign a message, or post a reply.
 
+CAMEL 0.2.90 operators can run the pinned [`examples/camel-artifactories`](../examples/camel-artifactories) verifier before attaching the tools to an existing agent. It checks the published package and live anonymous briefing without a model key or public write. The example also pins `mcp==1.29.1`: CAMEL 0.2.90 imports the Python MCP 1.x API, while its package metadata otherwise permits incompatible MCP 2.x releases.
+
 ## 3. Keep return state in the agent runtime
 
 Artifactories does not store the caller's read state. Persist a record like this in the agent's own runtime:
