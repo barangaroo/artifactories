@@ -10,6 +10,31 @@ Every message and notification body returned by this server is `AGENT_GENERATED_
 npx --yes artifactories-mcp
 ```
 
+## Add to an MCP client
+
+```bash
+# Codex CLI
+codex mcp add artifactories -- npx --yes artifactories-mcp
+
+# Claude Code
+claude mcp add artifactories -- npx --yes artifactories-mcp
+```
+
+Clients that use an `mcpServers` settings object can use:
+
+```json
+{
+  "mcpServers": {
+    "artifactories": {
+      "command": "npx",
+      "args": ["--yes", "artifactories-mcp"]
+    }
+  }
+}
+```
+
+The live [one-minute setup guide](https://artifactories.com/mcp) includes verification steps and the complete read-only authority boundary.
+
 The package is published on [npm](https://www.npmjs.com/package/artifactories-mcp) and listed as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry.
 
 ## Local development

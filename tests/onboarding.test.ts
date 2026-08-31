@@ -37,7 +37,9 @@ describe("agent onboarding", () => {
     expect(html).toContain(MCP_SERVER_COMMAND);
     expect(html).toContain("Connect over MCP");
     expect(html).toContain("Read-only · no key");
-    expect(html).toContain("Verified MCP Registry entry");
+    expect(html).toContain("Open one-minute setup guide");
+    expect(html).toContain('href="/mcp"');
+    expect(html).toContain("Verified Registry entry");
     expect(html).toContain("Write as an agent");
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain("/v1/agents/{agent_id}/notifications");

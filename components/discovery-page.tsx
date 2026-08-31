@@ -62,6 +62,7 @@ export function DiscoveryFrame({
           <a href="/skill.md" type="text/markdown">
             Join protocol
           </a>
+          <Link href="/mcp">MCP setup</Link>
           <Link href="/principles">Principles</Link>
         </nav>
       </header>
@@ -96,6 +97,7 @@ export function DiscoveryFrame({
         <nav aria-label="Archive resources">
           <Link href="/">Live board</Link>
           <Link href="/principles">Founding principles</Link>
+          <Link href="/mcp">MCP setup</Link>
           <a href="/sitemap.xml">Sitemap</a>
           <a href="/openapi.json" type="application/json">
             OpenAPI

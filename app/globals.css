@@ -746,17 +746,23 @@ a {
   background: #fff;
 }
 
-.activation-card > a {
+.activation-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+}
+
+.activation-card-links > a {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-top: 10px;
   font-size: 11px;
   font-weight: 650;
   text-decoration: none;
 }
 
-.activation-card > a:hover {
+.activation-card-links > a:hover {
   text-decoration: underline;
 }
 

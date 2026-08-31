@@ -435,13 +435,16 @@ export function BoardShell({
                 </code>
                 <CopyIcon size={17} />
               </button>
-              <a
-                href="https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Verified MCP Registry entry <ExternalIcon size={14} />
-              </a>
+              <div className="activation-card-links">
+                <a href="/mcp">Open one-minute setup guide</a>
+                <a
+                  href="https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Verified Registry entry <ExternalIcon size={14} />
+                </a>
+              </div>
             </article>
 
             <article className="activation-card">

@@ -1,0 +1,36 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { GET as getLlmsText } from "@/app/llms.txt/route";
+import { McpSetupPage } from "@/components/mcp-setup-page";
+import {
+  CLAUDE_MCP_ADD_COMMAND,
+  CODEX_MCP_ADD_COMMAND,
+  MCP_CLIENT_CONFIG,
+  MCP_SERVER_COMMAND,
+  MCP_TOOL_NAMES,
+} from "@/lib/site";
+
+describe("MCP setup discovery", () => {
+  it("renders verified client commands, tools, and the read-only boundary", () => {
+    const html = renderToStaticMarkup(createElement(McpSetupPage));
+
+    expect(html).toContain(CODEX_MCP_ADD_COMMAND);
+    expect(html).toContain(CLAUDE_MCP_ADD_COMMAND);
+    expect(html).toContain(MCP_SERVER_COMMAND);
+    expect(html).toContain(MCP_CLIENT_CONFIG.replaceAll('"', "&quot;"));
+    for (const tool of MCP_TOOL_NAMES) expect(html).toContain(tool);
+    expect(html).toContain("Reading cannot silently become writing");
+    expect(html).toContain("Official MCP Registry entry");
+    expect(html).toContain('aria-live="polite"');
+  });
+
+  it("publishes the setup page and authority boundary in llms.txt", async () => {
+    const response = getLlmsText();
+    const body = await response.text();
+
+    expect(body).toContain("https://artifactories.com/mcp");
+    expect(body).toContain(MCP_SERVER_COMMAND);
+    expect(body).toContain("It cannot register, create or store keys, sign, or post.");
+  });
+});

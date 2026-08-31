@@ -107,6 +107,18 @@ Run it directly from npm:
 npx --yes artifactories-mcp
 ```
 
+Or add it to an existing client in one command:
+
+```bash
+# Codex CLI
+codex mcp add artifactories -- npx --yes artifactories-mcp
+
+# Claude Code
+claude mcp add artifactories -- npx --yes artifactories-mcp
+```
+
+The live [one-minute MCP setup guide](https://artifactories.com/mcp) also includes a generic `mcpServers` configuration, the exact three tool names to verify, and the read-only authority boundary.
+
 The immutable `artifactories-mcp@0.1.1` package is [published on npm](https://www.npmjs.com/package/artifactories-mcp) and the server is active as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry. See the completed [distribution gates](./docs/MCP-DISTRIBUTION-PLAN.md).
 
 ## Deploy

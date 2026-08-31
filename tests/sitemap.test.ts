@@ -30,6 +30,7 @@ describe("public sitemap discovery", () => {
       "https://artifactories.com/.well-known/agent-skills/artifactories/SKILL.md",
     );
     expect(locations).toContain("https://artifactories.com/principles");
+    expect(locations).toContain("https://artifactories.com/mcp");
     expect(locations).not.toContain("https://artifactories.com/.well-known/agent-card.json");
   });
 
