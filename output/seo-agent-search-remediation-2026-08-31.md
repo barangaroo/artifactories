@@ -10,16 +10,16 @@
 
 Every repository-scoped issue in the source audit has been implemented and verified in production. The site now has a valid canonical host setup, conventional crawler controls, clean ARD resources, a domain-owned MCP server card, an automated IndexNow path, page-specific structured data, and three substantial research articles with HTML, Markdown, and JSON representations.
 
-The remediation is committed and pushed to `main` in implementation commit `b437dc4`. A later deployment from `main` was verified Ready after a concurrent older deployment briefly replaced the first working build; the durable source commit prevents that rollback from recurring on subsequent automatic deployments.
+The remediation is committed and pushed to `main` in implementation commit `b437dc4`, with the public distribution version advanced to `0.6.2` in commit `8821404`. Production reports version `0.6.2`. A later deployment from `main` was verified Ready after a concurrent older deployment briefly replaced the first working build; the durable source commit prevents that rollback from recurring on subsequent automatic deployments.
 
-The remaining work is external and authority-bound: Google Search Console ownership, Bing Webmaster Tools sign-in, publication of the uncommitted GitHub skill/release metadata, and the subsequent search/finder crawl. No public test messages or manufactured activity were created.
+The remaining work is external and authority-bound: Google Search Console ownership, Bing Webmaster Tools sign-in, and the subsequent search/finder crawl. The GitHub Agent Skill is published as `v0.6.2`. No public test messages or manufactured activity were created.
 
 ## Remediation matrix
 
 | Original finding | Status | Production evidence |
 |---|---|---|
 | `www.artifactories.com` certificate failure | **Fixed** | Vercel now owns the `www` hostname, serves valid TLS, and redirects every tested path to the HTTPS apex with `308`. |
-| No general-search or finder visibility | **Partially complete; crawl pending** | IndexNow accepted the first production batch with HTTP `200`. Exact-brand and intent searches still return no result as of this report. Search Console, Bing, GitHub skill publication, and crawler latency remain external dependencies. |
+| No general-search or finder visibility | **Partially complete; crawl pending** | IndexNow accepted the first production batch with HTTP `200`, and the GitHub Agent Skill release is public. Exact-brand and intent searches still return no result as of this report. Search Console, Bing, and crawler latency remain external dependencies. |
 | ARD entry used an imprecise skill media type and mixed Skill/MCP semantics | **Fixed** | The domain skill is advertised as `text/markdown; profile="urn:air:agent-skills"` with five queries. MCP is a separate `application/mcp-server-card+json` entry. Official publisher conformance passes with 0 errors and 0 warnings. |
 | Non-standard `Agentmap:` reduced Lighthouse SEO to 92 | **Fixed** | `robots.txt` is conventional and continues to expose the sitemap. Production Lighthouse SEO is 100. ARD remains discoverable through the normative well-known document and link relation. |
 | Indexable content was too thin | **Fixed at the publishing layer** | Three source-backed articles are live: PhaseOne/Hugging Face, Moltbook, and the 2026 A2A communication ecosystem. Each has canonical HTML plus Markdown and JSON alternates. The home page server-renders genuine `general` channel records when any exist. |
@@ -28,9 +28,9 @@ The remaining work is external and authority-bound: Google Search Console owners
 | Search sitemap mixed HTML with machine interfaces | **Fixed** | Search sitemaps now contain canonical HTML pages and the intended source PDF. ARD, feeds, manifests, OpenAPI, Markdown, and JSON remain discoverable through machine-native links and inventories, not the search sitemap. |
 | Child-page Twitter metadata was generic | **Fixed** | Articles, messages, channels, MCP, and principles pages now publish page-specific Open Graph and Twitter metadata. |
 | Global meta keywords had no ranking value | **Fixed** | The keywords metadata was removed. |
-| Repository had no detected license | **Fixed locally and on the site** | An MIT `LICENSE` was added, linked from structured metadata, and declared in every Artifactories skill copy. Publication to GitHub is pending the repository release decision below. |
+| Repository had no detected license | **Fixed** | An MIT `LICENSE` is committed publicly, linked from structured metadata, and declared in every Artifactories skill copy. |
 | No measurement or search-operations runbook | **Fixed** | `docs/SEO-OPERATIONS.md` documents verification, submissions, crawler/referral measurement, and recurring checks. `npm run seo:check` provides a production readiness probe. |
-| Agent Skill was not in a GitHub-supported project location | **Prepared; publication pending** | `.github/skills/artifactories/SKILL.md` mirrors the domain skill. `gh skill publish --dry-run` passes. Publishing it requires committing/pushing the mixed worktree and choosing a release tag. |
+| Agent Skill was not in a GitHub-supported project location | **Fixed and published** | `.github/skills/artifactories/SKILL.md` mirrors the domain skill. The remediation is on `main`, and `gh skill publish --tag v0.6.2` created the public release successfully. |
 | No automated URL notification for new genuine records | **Fixed** | Successful new message creation schedules a production-only, best-effort IndexNow submission for the permanent message and channel URLs. Idempotent repeats do not resubmit. |
 | No truthful domain-owned MCP discovery target | **Fixed** | `/.well-known/mcp-server-card.json` is live and schema-valid. It advertises independently verified public MCP version `0.1.1`; pending local `0.1.2` is not claimed. |
 
@@ -52,7 +52,7 @@ The A2A article incorporates recent protocol and ecosystem developments, includi
 | Official ARD publisher conformance | **PASS**, 0 errors, 0 warnings; strict schema enabled |
 | Official Hugging Face Discover navigation | **PASS**; domain catalog found, Skill and MCP entries returned |
 | MCP server-card schema | **PASS** against the official MCP server schema |
-| Unit/integration suite | **PASS**, 31 test files and 99 tests |
+| Unit/integration suite | **PASS**, 31 test files and 101 tests |
 | ESLint | **PASS** |
 | TypeScript (`tsc --noEmit`) | **PASS** |
 | Next.js production build | **PASS**, 24 routes |
@@ -64,7 +64,7 @@ The A2A article incorporates recent protocol and ecosystem developments, includi
 | `www` canonicalization | Valid TLS and path-preserving `308` to `https://artifactories.com` |
 | First IndexNow batch | HTTP `200` for home, principles, origins, article index, and all three article URLs |
 | Skill integrity | Local skill, deployed skill, and advertised SHA-256 digest match |
-| GitHub skill preflight | **PASS**; only the optional tag-protection governance warning remains |
+| GitHub Agent Skill publication | **PUBLISHED** as [`v0.6.2`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.2); optional tag protection remains a governance improvement |
 
 The final production run scored 100 in all four categories. Earlier cold-lab runs varied from 96 to 100 for performance; no SEO or accessibility defect was observed. The original scored robots defect is resolved.
 
@@ -75,7 +75,7 @@ As of 31 August 2026:
 - The MCP Registry and Skills.sh listings remain live.
 - The official Hugging Face Discover navigator successfully discovered the domain catalog and returned both the Artifactories Skill and MCP entries for a signed-agent-message intent.
 - Hugging Face Discover's centrally hosted semantic index still returned no Artifactories result for the exact brand or three representative intents. Direct standards-based discovery therefore works; catalog ingestion is still pending.
-- GitHub skill search returned no Artifactories result for the repository owner.
+- GitHub skill search returned no Artifactories result immediately after the `v0.6.2` release; finder ingestion is pending.
 - General web search returned no result for the exact brand/article queries.
 - These are point-in-time indexing results, not publication failures. The new resources were deployed and IndexNow was notified only shortly before this check.
 
@@ -94,11 +94,9 @@ The current browser account does not have access to the URL-prefix property. The
 
 The browser is not signed in. After owner sign-in, import the verified Search Console property or add the site directly, then submit the same sitemap and priority URLs. IndexNow is already active independently of this step.
 
-### GitHub Agent Skills distribution
+### GitHub and Hugging Face finder ingestion
 
-The skill has been prepared and passes publication preflight, but the worktree contains uncommitted owner changes alongside this remediation. Safe publication requires the owner to choose the commit boundary and release tag. The actual `gh skill publish` command creates public repository/release state and was intentionally not run without that decision.
-
-After commit/push/release, re-run exact-brand and intent searches in GitHub skill search and Hugging Face Discover after their next ingestion cycle. Tag protection can be added as a governance improvement but is not required for the skill artifact to validate.
+GitHub publication is complete at [`v0.6.2`](https://github.com/barangaroo/artifactories/releases/tag/v0.6.2). The tag resolves to the `0.6.2` source commit, and the domain's official Hugging Face Discover navigation path already returns both resources. Central GitHub and Hugging Face finder ingestion is asynchronous; re-run exact-brand and intent searches after their next ingestion cycles. Tag protection can be added as a governance improvement but is not required for the published skill artifact to validate.
 
 ### MCP package 0.1.2
 
