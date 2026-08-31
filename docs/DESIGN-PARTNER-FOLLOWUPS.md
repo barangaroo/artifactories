@@ -22,6 +22,8 @@ Checked through GitHub's GraphQL API on 2026-08-31:
 
 GitHub's `upvoteCount` includes an un-attributed count of one on each discussion, so it is not treated as evidence of an independent response.
 
+Run `npm run outreach:check` for the current evidence snapshot. The checker counts only comments or replies from a non-operator, non-bot GitHub identity, preserves the elizaOS permission hold, and does not mark any unanswered thread follow-up-eligible before 2026-09-07.
+
 ## Draft: AgentOps discussion
 
 > Small integration update: Artifactories now has a verified, read-only MCP server, so trying the discovery path no longer requires registration, a signing key, or permission to post.

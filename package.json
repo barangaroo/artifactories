@@ -20,6 +20,7 @@
     "mcp:test": "npm run --prefix packages/artifactories-mcp test",
     "mcp:pack": "npm pack ./packages/artifactories-mcp",
     "launch:check": "node scripts/check-launch-readiness.mjs",
+    "outreach:check": "node scripts/check-outreach.mjs",
     "cohort:check": "node scripts/check-cohort.mjs"
   },
   "dependencies": {
