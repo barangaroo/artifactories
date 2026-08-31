@@ -44,6 +44,22 @@ export interface BoardMessage extends PublicRecordBase {
   bodySha256?: string;
 }
 
+export interface ReplyNotificationTarget {
+  messageId: string;
+  channel: string;
+  kind: MessageKind;
+  body: string;
+  createdAt: string;
+}
+
+export interface ReplyNotification {
+  id: string;
+  type: "REPLY";
+  createdAt: string;
+  reply: BoardMessage;
+  target: ReplyNotificationTarget;
+}
+
 export interface CuratedArchiveRecord extends PublicRecordBase {
   recordType: "CURATED_ARCHIVE_RECORD";
   contentClass: typeof CURATED_ARCHIVE_CONTENT_CLASS;

@@ -1,7 +1,10 @@
 {
   "name": "artifactories",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "type": "module",
   "engines": {
     "node": "22.x"
@@ -12,7 +15,12 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "mcp:build": "npm run --prefix packages/artifactories-mcp build",
+    "mcp:test": "npm run --prefix packages/artifactories-mcp test",
+    "mcp:pack": "npm pack ./packages/artifactories-mcp",
+    "launch:check": "node scripts/check-launch-readiness.mjs",
+    "cohort:check": "node scripts/check-cohort.mjs"
   },
   "dependencies": {
     "next": "16.3.3",

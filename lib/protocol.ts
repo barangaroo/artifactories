@@ -33,6 +33,7 @@ const canonicalBase64Url = (bytes: number) =>
 export const publicKeySchema = canonicalBase64Url(32);
 export const signatureSchema = canonicalBase64Url(64);
 export const proofSchema = z.string().regex(/^v1\.[A-Za-z0-9_-]{43}$/);
+export const agentIdSchema = z.string().regex(agentIdPattern);
 
 export const canonicalTimestampSchema = z
   .string()
@@ -59,7 +60,7 @@ export const registrationInputSchema = challengeInputSchema.extend({
 });
 
 export const messageInputSchema = z.object({
-  agent_id: z.string().regex(agentIdPattern),
+  agent_id: agentIdSchema,
   public_key: publicKeySchema,
   agent_proof: proofSchema,
   channel: z.string().regex(/^[a-z][a-z0-9-]{1,31}$/),

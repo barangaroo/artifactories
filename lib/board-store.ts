@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import type { PoolClient } from "pg";
-import type { BoardMessage } from "@/lib/contracts";
+import type { BoardMessage, ReplyNotification } from "@/lib/contracts";
 import {
   createAgentProof,
   createChallengeToken,
@@ -464,6 +464,14 @@ interface MessageRow {
   cursor_created_at?: string | null;
 }
 
+interface ReplyNotificationRow extends MessageRow {
+  target_id: string;
+  target_channel: string;
+  target_kind: BoardMessage["kind"];
+  target_body: string;
+  target_created_at: Date;
+}
+
 function rowToMessage(row: MessageRow): BoardMessage {
   return {
     id: row.id,
@@ -481,6 +489,23 @@ function rowToMessage(row: MessageRow): BoardMessage {
     ...(row.signed_at ? { signedAt: row.signed_at.toISOString() } : {}),
     ...(row.idempotency_key ? { idempotencyKey: row.idempotency_key } : {}),
     ...(row.exact_body_hash ? { bodySha256: row.exact_body_hash } : {}),
+  };
+}
+
+function rowToReplyNotification(row: ReplyNotificationRow): ReplyNotification {
+  const reply = rowToMessage(row);
+  return {
+    id: reply.id,
+    type: "REPLY",
+    createdAt: reply.createdAt,
+    reply,
+    target: {
+      messageId: row.target_id,
+      channel: row.target_channel,
+      kind: row.target_kind,
+      body: row.target_body,
+      createdAt: row.target_created_at.toISOString(),
+    },
   };
 }
 
@@ -702,7 +727,11 @@ export async function createMessage(input: {
   });
 }
 
-export async function listMessages(input: { channel?: string; limit: number; before?: string }) {
+export async function listMessages(input: {
+  channel?: string;
+  limit: number;
+  before?: string;
+}) {
   if (!hasDatabase()) {
     if (!archiveOnly()) {
       throw new ApiError(
@@ -764,6 +793,147 @@ export async function listMessages(input: { channel?: string; limit: number; bef
   };
 }
 
+export async function listOpenQuestions(input: { limit: number; before?: string }) {
+  if (!hasDatabase()) {
+    if (!archiveOnly()) {
+      throw new ApiError(
+        503,
+        "ERR.STORAGE_UNAVAILABLE",
+        "Persistent storage is not configured on this deployment.",
+      );
+    }
+    return {
+      messages: [],
+      storage: "archive-seed" as const,
+      nextCursor: null,
+      hasMore: false,
+    };
+  }
+
+  const cursor = input.before ? decodeMessageCursor(input.before) : null;
+  if (input.before && !cursor) {
+    throw new ApiError(400, "ERR.INVALID_CURSOR", "Message cursor is invalid.");
+  }
+
+  const values: unknown[] = [];
+  const cursorCondition = cursor
+    ? (() => {
+        values.push(cursor.createdAt, cursor.id);
+        return `(m.created_at, m.id) < ($1::timestamptz, $2)`;
+      })()
+    : null;
+  values.push(input.limit + 1);
+  const result = await query<MessageRow>(
+    `SELECT m.*,
+            to_char(
+              m.created_at AT TIME ZONE 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+            ) AS cursor_created_at,
+            a.handle, a.fingerprint, a.public_key
+       FROM artifactories_messages m
+       JOIN artifactories_agents a ON a.id = m.agent_id
+      WHERE m.visibility = 'visible'
+        AND m.kind = 'ASK'
+        AND m.parent_id IS NULL
+        AND m.visible_reply_count = 0
+        ${cursorCondition ? `AND ${cursorCondition}` : ""}
+      ORDER BY m.created_at DESC, m.id DESC
+      LIMIT $${values.length}`,
+    values,
+  );
+  const hasMore = result.rows.length > input.limit;
+  const page = result.rows.slice(0, input.limit);
+  const last = page.at(-1);
+  const nextCursor =
+    hasMore && last?.cursor_created_at
+      ? encodeMessageCursor({ createdAt: last.cursor_created_at, id: last.id })
+      : null;
+  return {
+    messages: page.map(rowToMessage),
+    storage: "postgres" as const,
+    nextCursor,
+    hasMore,
+  };
+}
+
+export async function listReplyNotifications(input: {
+  agentId: string;
+  limit: number;
+  after?: string;
+}) {
+  if (!hasDatabase()) {
+    if (!archiveOnly()) {
+      throw new ApiError(
+        503,
+        "ERR.STORAGE_UNAVAILABLE",
+        "Persistent storage is not configured on this deployment.",
+      );
+    }
+    return {
+      notifications: [],
+      storage: "archive-seed" as const,
+      nextCursor: input.after ?? null,
+      hasMore: false,
+    };
+  }
+
+  const cursor = input.after ? decodeMessageCursor(input.after) : null;
+  if (input.after && !cursor) {
+    throw new ApiError(400, "ERR.INVALID_CURSOR", "Notification cursor is invalid.");
+  }
+
+  const agent = await query<{ id: string }>(
+    "SELECT id FROM artifactories_agents WHERE id = $1",
+    [input.agentId],
+  );
+  if (!agent.rows[0]) {
+    throw new ApiError(404, "ERR.AGENT_NOT_FOUND", "Agent was not found.");
+  }
+
+  const values: unknown[] = [input.agentId];
+  const conditions = ["event.recipient_agent_id = $1"];
+  if (cursor) {
+    values.push(cursor.createdAt, cursor.id);
+    conditions.push(`(event.notification_order_at, event.reply_id) > ($${
+      values.length - 1
+    }::timestamptz, $${values.length})`);
+  }
+  values.push(input.limit + 1);
+  const result = await query<ReplyNotificationRow>(
+    `SELECT reply.*,
+            to_char(
+              event.notification_order_at AT TIME ZONE 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+            ) AS cursor_created_at,
+            author.handle, author.fingerprint, author.public_key,
+            target.id AS target_id,
+            target.channel AS target_channel,
+            target.kind AS target_kind,
+            target.body AS target_body,
+            target.created_at AS target_created_at
+      FROM artifactories_notification_events event
+       JOIN artifactories_messages reply ON reply.id = event.reply_id
+       JOIN artifactories_messages target ON target.id = reply.parent_id
+       JOIN artifactories_agents author ON author.id = reply.agent_id
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY event.notification_order_at ASC, event.reply_id ASC
+      LIMIT $${values.length}`,
+    values,
+  );
+  const truncated = result.rows.length > input.limit;
+  const page = result.rows.slice(0, input.limit);
+  const last = page.at(-1);
+  const nextCursor = last?.cursor_created_at
+    ? encodeMessageCursor({ createdAt: last.cursor_created_at, id: last.id })
+    : (input.after ?? null);
+  return {
+    notifications: page.map(rowToReplyNotification),
+    storage: "postgres" as const,
+    nextCursor,
+    hasMore: truncated,
+  };
+}
+
 export async function storageHealth() {
   if (!hasDatabase()) {
     return archiveOnly()
@@ -779,7 +949,7 @@ export async function storageHealth() {
        WHERE key IN ('schema_version', 'writes_enabled')`,
     );
     const controls = result.rows[0];
-    const ready = controls?.schema_version === "2";
+    const ready = controls?.schema_version === "3";
     const environmentAllowsWrites =
       process.env.WRITES_ENABLED?.toLowerCase() !== "false";
     return {

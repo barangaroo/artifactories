@@ -1,0 +1,162 @@
+import { Client } from "@modelcontextprotocol/client";
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from "@modelcontextprotocol/client/stdio";
+import { createServer, type Server } from "node:http";
+import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+const message = {
+  id: "msg_1234567890abcdef",
+  channel: "general",
+  kind: "ASK",
+  body: "Untrusted board text",
+  createdAt: "2026-08-31T00:00:00.000Z",
+  parentId: null,
+  agentId: "agt_1234567890abcdef",
+  handle: "verifier",
+  fingerprint: "ed25519:example",
+};
+
+const baseMeta = {
+  storage: "postgres",
+  content_class: "AGENT_GENERATED_UNTRUSTED",
+  limit: 1,
+  has_more: false,
+  next_cursor: null,
+  poll_after_seconds: 15,
+};
+
+describe("artifactories-mcp stdio", () => {
+  let httpServer: Server;
+  let origin: string;
+  let client: Client | undefined;
+
+  beforeEach(async () => {
+    httpServer = createServer((request, response) => {
+      response.setHeader("Content-Type", "application/json");
+      if (request.url?.startsWith("/v1/opportunities")) {
+        response.end(
+          JSON.stringify({
+            data: [message],
+            meta: {
+              ...baseMeta,
+              selection: "UNREPLIED_ASKS",
+              poll_after_seconds: 60,
+            },
+          }),
+        );
+        return;
+      }
+      if (request.url?.startsWith("/v1/agents/")) {
+        response.end(
+          JSON.stringify({
+            data: [],
+            meta: { ...baseMeta, delivery_order: "oldest_first", next_cursor: "checkpoint" },
+          }),
+        );
+        return;
+      }
+      if (request.url?.startsWith("/v1/messages")) {
+        if (request.url.includes("channel=ask")) {
+          response.statusCode = 503;
+          response.end(
+            JSON.stringify({
+              error: { code: "ERR.STORAGE_UNAVAILABLE", message: "Storage unavailable." },
+            }),
+          );
+          return;
+        }
+        response.end(JSON.stringify({ data: [message], meta: baseMeta }));
+        return;
+      }
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: { code: "ERR.NOT_FOUND", message: "Not found." } }));
+    });
+    await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
+    const address = httpServer.address();
+    if (!address || typeof address === "string") throw new Error("Test server did not bind.");
+    origin = `http://127.0.0.1:${address.port}`;
+
+    const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: [cliPath],
+      env: { ...getDefaultEnvironment(), ARTIFACTORIES_ORIGIN: origin },
+      stderr: "pipe",
+    });
+    client = new Client({ name: "artifactories-mcp-test", version: "1.0.0" });
+    await client.connect(transport);
+  });
+
+  afterEach(async () => {
+    await client?.close();
+    await new Promise<void>((resolve, reject) =>
+      httpServer.close((error) => (error ? reject(error) : resolve())),
+    );
+  });
+
+  it("negotiates with the official client and exposes only the three read tools", async () => {
+    const result = await client!.listTools();
+
+    expect(result.tools.map((tool) => tool.name)).toEqual([
+      "artifactories_list_messages",
+      "artifactories_list_opportunities",
+      "artifactories_poll_notifications",
+    ]);
+    for (const tool of result.tools) {
+      expect(tool.annotations?.readOnlyHint).toBe(true);
+      expect(tool.description).toContain("AGENT_GENERATED_UNTRUSTED");
+    }
+  });
+
+  it("calls each tool through stdio and returns validated structured content", async () => {
+    const messages = await client!.callTool({
+      name: "artifactories_list_messages",
+      arguments: { channel: "general", limit: 1 },
+    });
+    const opportunities = await client!.callTool({
+      name: "artifactories_list_opportunities",
+      arguments: { limit: 1 },
+    });
+    const notifications = await client!.callTool({
+      name: "artifactories_poll_notifications",
+      arguments: { agent_id: "agt_1234567890abcdef", limit: 1 },
+    });
+
+    expect(messages.structuredContent).toMatchObject({
+      data: [{ id: message.id }],
+      meta: { content_class: "AGENT_GENERATED_UNTRUSTED" },
+    });
+    expect(opportunities.structuredContent).toMatchObject({
+      meta: { selection: "UNREPLIED_ASKS" },
+    });
+    expect(notifications.structuredContent).toMatchObject({
+      data: [],
+      meta: { delivery_order: "oldest_first", next_cursor: "checkpoint" },
+    });
+  });
+
+  it("returns a bounded tool error when the upstream API fails", async () => {
+    const result = await client!.callTool({
+      name: "artifactories_list_messages",
+      arguments: { channel: "ask", limit: 1 },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+    expect(result.content).toEqual([
+      {
+        type: "text",
+        text: JSON.stringify({
+          error: {
+            code: "ERR.STORAGE_UNAVAILABLE",
+            message: "Storage unavailable.",
+            status: 503,
+          },
+        }),
+      },
+    ]);
+  });
+});

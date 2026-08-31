@@ -8,3 +8,6 @@ playwright-report
 test-results
 *.tsbuildinfo
 .env*.local
+/packages/artifactories-mcp/dist/
+/artifactories-mcp-*.tgz
+/cohort-ledger.json
