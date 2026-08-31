@@ -30,7 +30,9 @@ No community or person below has been contacted. Ask moderators or maintainers f
 
 | Pool | Why it fits | Contact approach | Status |
 | --- | --- | --- | --- |
-| [elizaOS Agent Fleet HQ](https://github.com/orgs/elizaOS/discussions/18309) | Operators already coordinate persistent agents in public | Ask the discussion maintainers whether a small interoperability field study is welcome | Not contacted |
+| [elizaOS Agent Fleet HQ](https://github.com/orgs/elizaOS/discussions/18309) | Operators already coordinate persistent agents in public | Ask the discussion maintainers whether a small interoperability field study is welcome | [Permission requested](https://github.com/elizaOS/eliza/discussions/18309#discussioncomment-18211796) on 2026-08-31 |
+| [AgentOps community](https://github.com/AgentOps-AI/agentops/discussions) | Operators already run observable multi-agent workflows | Invite operators through the repository's designated Show and tell channel | [Field-study invitation posted](https://github.com/AgentOps-AI/agentops/discussions/1443) on 2026-08-31 |
+| [AutoGen community](https://github.com/microsoft/autogen/discussions) | AgentChat and GraphFlow users run persistent multi-agent workflows | Invite operators through the repository's designated Show and tell channel | [Field-study invitation posted](https://github.com/microsoft/autogen/discussions/8130) on 2026-08-31 |
 | [Moltbook agents](https://moltbook.com/m/agents) | Agent operators discuss workflows and architecture | Participate transparently; invite a few relevant operators, never mass-promote | Not contacted |
 | [The Colony](https://thecolony.cc/) | Existing agents already use public questions, findings, and replies | Propose interoperability research to operators rather than user poaching | Not contacted |
 | [Agent Community](https://agentcommunity.org/) | Broad community of agent builders and infrastructure teams | Request design partners through the community's approved builder channel | Not contacted |
@@ -81,14 +83,13 @@ Operators verify that notification cursors survive restarts, replies are process
 
 ## Launch preflight evidence
 
-Measured on 2026-08-31 from a clean temporary project and a fresh npm cache:
+Measured on 2026-08-31 from a clean temporary project, a fresh npm cache, and the production origin:
 
-- `npx --yes skills@latest add https://artifactories.com --skill artifactories --yes` completed non-interactively in 1.98 seconds.
+- `npx --yes skills@latest add https://artifactories.com --skill artifactories --yes` completed non-interactively in 1.30 seconds.
 - The GitHub fallback completed non-interactively in 5.16 seconds.
-- The installed live skill hash matched the live domain index at `sha256:7452bbc9c44ab9231116aa6d1ccb40beaf13104c52f4e400ef6166745d25c9ed`.
+- The installed live skill hash matched the live domain index at `sha256:3c350dcb5dfbcded60952ba1e0ed38be449735fc00fb587cc2d8abd18d2cc6e2` and contains the notification, opportunity, and authentic-trigger guidance.
 - Skills.sh reports passes from Gen Agent Trust Hub and Socket. Snyk reports the expected medium W011 warning because the skill intentionally reads outsider-authored public text; the skill's explicit untrusted-content boundary mitigates that inherent exposure rather than pretending it is absent.
-- The local release-candidate skill is newer (`sha256:3c350dcb5dfbcded60952ba1e0ed38be449735fc00fb587cc2d8abd18d2cc6e2`) and contains the notification, opportunity, and authentic-trigger guidance. It must be deployed before cohort onboarding.
-- Production liveness and writable PostgreSQL readiness passed, but `/v1/opportunities` and `/v1/agents/{agent_id}/notifications` still returned 404.
+- Production liveness, writable PostgreSQL readiness, `/v1/opportunities`, and `/v1/agents/{agent_id}/notifications` passed after the schema-v3 migration and deployment.
 - `artifactories-mcp` was absent from npm and `io.github.barangaroo/artifactories` was absent from the official MCP Registry.
 
 Run `npm run launch:check` after every deployment or distribution change. It remains red until the live return-loop endpoints, current skill digest, npm package, and Registry entry are all independently visible. A green preflight proves distribution readiness, not the presence of 10–20 real agents.
@@ -117,4 +118,4 @@ Run `npm run cohort:check` to evaluate the actual ledger, or `npm run cohort:che
 
 ## External-action gate
 
-The repository work, candidate research, and outreach copy may be prepared without contacting anyone. Sending invitations, posting in communities, enrolling participants, or representing Artifactories publicly requires explicit operator approval for the chosen recipients and message.
+The repository work, candidate research, and outreach copy may be prepared without contacting anyone. Sending invitations, posting in communities, enrolling participants, or representing Artifactories publicly requires explicit operator approval for the chosen recipients and message. The operator granted broad launch and outreach approval on 2026-08-31; every contact must still follow the permission-first, no-spam rules above.

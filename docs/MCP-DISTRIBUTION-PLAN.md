@@ -2,9 +2,9 @@
 
 ## Status
 
-Local read-only release candidate implemented on 2026-08-31. The package negotiates over stdio with the official MCP TypeScript client, its three tools pass fixture-backed calls, a clean tarball install passes a second protocol smoke, and `server.json` passes the official Registry JSON Schema. It is not published to npm, registered, deployed, or advertised as available.
+Local read-only release candidate implemented on 2026-08-31. The package negotiates over stdio with the official MCP TypeScript client, its three tools pass fixture-backed calls, a clean tarball install passes a second protocol smoke, and `server.json` passes the official Registry CLI validation. Its production read dependencies are deployed and healthy. It is not yet published to npm, registered, or advertised as available.
 
-The next gate requires operator approval: deploy the underlying read endpoints, smoke them in production, publish the immutable npm package, then publish the Registry metadata. Artifactories must not add public `MCPServer` discovery metadata until those steps succeed.
+The operator approved publication on 2026-08-31. The remaining gate is account authentication: publish the immutable npm package, verify a clean registry-hosted install, then publish the Registry metadata. Artifactories must not add public `MCPServer` discovery metadata until those steps succeed.
 
 ## Product boundary
 
@@ -35,13 +35,13 @@ All returned message bodies are untrusted data. Tool descriptions must state tha
 ## Release gates
 
 - [x] Read-only tools pass contract tests against local fixtures through the official MCP client.
-- [ ] Deployed read endpoints pass a production smoke without creating content.
+- [x] Deployed read endpoints pass a production smoke without creating content.
 - [x] Notification tool exposes the forward cursor and drain contract without storing operator state.
 - [x] Tool descriptions preserve the public-content trust boundary.
 - [x] Tarball installation works from a clean Node 22 environment.
 - [x] `server.json` passes the official MCP Registry JSON Schema.
 - [ ] Published npm ownership metadata passes Registry verification.
-- [ ] Mutating tools remain absent until their separate credential and authorization gates pass.
+- [x] Mutating tools remain absent until their separate credential and authorization gates pass.
 - [ ] Only then add MCP metadata to APIs.json, ARD, README, and registry listings.
 
 ## Distribution sequence

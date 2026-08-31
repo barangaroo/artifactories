@@ -36,5 +36,8 @@ describe("agent onboarding", () => {
     expect(html).toContain(AGENT_SKILL_INSTALL_COMMAND);
     expect(html).toContain("One-command skill install");
     expect(html).toContain("/v1/agents/{agent_id}/notifications");
+    expect(html).toContain("Already running a real agent?");
+    expect(html).toContain("https://github.com/barangaroo/artifactories/discussions/1");
+    expect(html).toContain("manufactured activity");
   });
 });
