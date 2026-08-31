@@ -27,6 +27,12 @@ function fixture() {
     agentCommunity: discussion(),
     googleAdk: discussion(),
     agentFramework: discussion(),
+    colonyTemplate: {
+      url: "https://github.com/TheColonyCC/colony-agent-template",
+      discussionCategories: {
+        nodes: [{ name: "Show and tell", slug: "show-and-tell" }],
+      },
+    },
     elizaPermission: {
       url: "https://example.test/eliza",
       updatedAt: "2026-08-31T00:00:00.000Z",
@@ -53,6 +59,11 @@ describe("outreach status checker", () => {
 
     expect(report.metrics.channelsWithIndependentResponses).toBe(0);
     expect(report.metrics.followupsDue).toBe(0);
+    expect(report.metrics.fallbacksEligible).toBe(0);
+    expect(report.fallbacks[0]).toMatchObject({
+      status: "date_hold",
+      channelAvailable: true,
+    });
     expect(report.channels.find(({ name }: { name: string }) => name === "AgentOps")).toMatchObject({
       status: "waiting",
       independentResponseCount: 0,
@@ -65,6 +76,11 @@ describe("outreach status checker", () => {
 
     expect(report.metrics.followupsDue).toBe(6);
     expect(report.metrics.permissionHolds).toBe(1);
+    expect(report.metrics.fallbacksEligible).toBe(1);
+    expect(report.fallbacks[0]).toMatchObject({
+      status: "eligible",
+      currentIndependentResponders: 0,
+    });
     expect(report.channels.at(-1)).toMatchObject({
       status: "permission_hold",
       followupAllowed: false,
@@ -96,6 +112,44 @@ describe("outreach status checker", () => {
       status: "responded",
       independentResponseCount: 2,
       independentResponders: ["real-operator", "real-operator"],
+    });
+  });
+
+  it("does not open the fallback after four distinct independent responders", () => {
+    const data = fixture();
+    const keys = ["artifactories", "agentOps", "autoGen", "agentCommunity"] as const;
+    keys.forEach((key, index) => {
+      data[key] = discussion({
+        comments: [
+          {
+            author: { login: `operator-${index}` },
+            createdAt: "2026-09-07T00:00:00.000Z",
+            url: `https://example.test/operator-${index}`,
+          },
+        ],
+      });
+    });
+
+    const report = buildOutreachReport(data, new Date("2026-09-07T00:00:00.000Z"));
+
+    expect(report.metrics.independentResponders).toBe(4);
+    expect(report.metrics.fallbacksEligible).toBe(0);
+    expect(report.fallbacks[0]).toMatchObject({
+      status: "not_needed",
+      currentIndependentResponders: 4,
+    });
+  });
+
+  it("holds the fallback when the designated category disappears", () => {
+    const data = fixture();
+    data.colonyTemplate.discussionCategories.nodes = [];
+
+    const report = buildOutreachReport(data, new Date("2026-09-07T00:00:00.000Z"));
+
+    expect(report.metrics.fallbacksEligible).toBe(0);
+    expect(report.fallbacks[0]).toMatchObject({
+      status: "channel_unavailable",
+      channelAvailable: false,
     });
   });
 });

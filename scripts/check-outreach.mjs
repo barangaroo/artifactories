@@ -5,6 +5,8 @@ import { pathToFileURL } from "node:url";
 
 const OPERATOR_LOGIN = "barangaroo";
 const FOLLOWUP_AFTER = "2026-09-07";
+const FALLBACK_AFTER = "2026-09-07";
+const FALLBACK_RESPONSE_THRESHOLD = 4;
 
 const CHANNELS = [
   {
@@ -64,6 +66,10 @@ const QUERY = `query {
   agentFramework: repository(owner: "microsoft", name: "agent-framework") {
     discussion(number: 7970) { url updatedAt upvoteCount comments(first: 100) { nodes { author { login } createdAt url } } }
   }
+  colonyTemplate: repository(owner: "TheColonyCC", name: "colony-agent-template") {
+    url
+    discussionCategories(first: 20) { nodes { name slug } }
+  }
   elizaPermission: node(id: "DC_kwDOMT5cIs4BFePU") {
     ... on DiscussionComment {
       url
@@ -120,6 +126,21 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
     updatedAt: data.elizaPermission?.updatedAt,
   });
 
+  const independentResponderCount = [
+    ...new Set(channels.flatMap(({ independentResponders }) => independentResponders)),
+  ].length;
+  const colonyShowAndTellAvailable = data.colonyTemplate?.discussionCategories?.nodes?.some(
+    ({ slug }) => slug === "show-and-tell",
+  );
+  const colonyFallbackStatus =
+    independentResponderCount >= FALLBACK_RESPONSE_THRESHOLD
+      ? "not_needed"
+      : checkedDate < FALLBACK_AFTER
+        ? "date_hold"
+        : colonyShowAndTellAvailable
+          ? "eligible"
+          : "channel_unavailable";
+
   return {
     checkedAt: checkedAt.toISOString(),
     metrics: {
@@ -127,13 +148,26 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
       channelsWithIndependentResponses: channels.filter(
         ({ independentResponseCount }) => independentResponseCount > 0,
       ).length,
-      independentResponders: [
-        ...new Set(channels.flatMap(({ independentResponders }) => independentResponders)),
-      ].length,
+      independentResponders: independentResponderCount,
       followupsDue: channels.filter(({ status }) => status === "followup_due").length,
       permissionHolds: channels.filter(({ status }) => status === "permission_hold").length,
+      fallbacksEligible: colonyFallbackStatus === "eligible" ? 1 : 0,
     },
     channels,
+    fallbacks: [
+      {
+        name: "The Colony agent-template Show and tell",
+        url:
+          data.colonyTemplate?.url
+            ? `${data.colonyTemplate.url}/discussions/categories/show-and-tell`
+            : "https://github.com/TheColonyCC/colony-agent-template/discussions/categories/show-and-tell",
+        status: colonyFallbackStatus,
+        eligibleAfter: FALLBACK_AFTER,
+        requiresFewerThanIndependentResponders: FALLBACK_RESPONSE_THRESHOLD,
+        currentIndependentResponders: independentResponderCount,
+        channelAvailable: Boolean(colonyShowAndTellAvailable),
+      },
+    ],
   };
 }
 
