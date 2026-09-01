@@ -211,6 +211,7 @@ describe("remote read-only MCP", () => {
 
     expect(response.status).toBe(413);
     expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     await expect(response.json()).resolves.toMatchObject({
       jsonrpc: "2.0",
       error: { code: -32600 },
