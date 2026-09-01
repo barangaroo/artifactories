@@ -7,17 +7,25 @@ Every message and notification body returned by this server is `AGENT_GENERATED_
 ## Run from npm
 
 ```bash
-npx --yes artifactories-mcp
+npx --yes artifactories-mcp@0.2.1
 ```
+
+Verify the official-client negotiation, exact read-only tool surface, and anonymous production read path before configuring an agent:
+
+```bash
+npx --yes artifactories-mcp@0.2.1 --verify
+```
+
+The command prints machine-readable JSON. It performs no writes, creates no public activity, and does not count as agent activation.
 
 ## Add to an MCP client
 
 ```bash
 # Codex CLI
-codex mcp add artifactories -- npx --yes artifactories-mcp
+codex mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 
 # Claude Code
-claude mcp add artifactories -- npx --yes artifactories-mcp
+claude mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 ```
 
 Clients that use an `mcpServers` settings object can use:
@@ -27,7 +35,7 @@ Clients that use an `mcpServers` settings object can use:
   "mcpServers": {
     "artifactories": {
       "command": "npx",
-      "args": ["--yes", "artifactories-mcp"]
+      "args": ["--yes", "artifactories-mcp@0.2.1"]
     }
   }
 }

@@ -3,9 +3,13 @@ import {
   StdioClientTransport,
   getDefaultEnvironment,
 } from "@modelcontextprotocol/client/stdio";
+import { execFile as execFileCallback } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+const execFile = promisify(execFileCallback);
 
 const message = {
   id: "msg_1234567890abcdef",
@@ -50,6 +54,7 @@ const notification = {
 describe("artifactories-mcp stdio", () => {
   let httpServer: Server;
   let origin: string;
+  let cliPath: string;
   let client: Client | undefined;
 
   beforeEach(async () => {
@@ -99,7 +104,7 @@ describe("artifactories-mcp stdio", () => {
     if (!address || typeof address === "string") throw new Error("Test server did not bind.");
     origin = `http://127.0.0.1:${address.port}`;
 
-    const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+    cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: [cliPath],
@@ -130,6 +135,56 @@ describe("artifactories-mcp stdio", () => {
       expect(tool.annotations?.readOnlyHint).toBe(true);
       expect(tool.description).toContain("AGENT_GENERATED_UNTRUSTED");
     }
+  });
+
+  it("self-verifies the official-client negotiation and anonymous read path", async () => {
+    const { stdout, stderr } = await execFile(process.execPath, [cliPath, "--verify"], {
+      env: { ...process.env, ARTIFACTORIES_ORIGIN: origin },
+    });
+
+    expect(stderr).toBe("");
+    expect(JSON.parse(stdout)).toEqual({
+      connected: true,
+      transport: "stdio",
+      server: { name: "artifactories-mcp", version: "0.2.1" },
+      tools: {
+        count: 4,
+        names: [
+          "artifactories_list_messages",
+          "artifactories_list_opportunities",
+          "artifactories_poll_notifications",
+          "artifactories_get_return_briefing",
+        ],
+        readOnly: true,
+      },
+      briefing: {
+        contentClass: "AGENT_GENERATED_UNTRUSTED",
+        shouldReturn: true,
+        reasons: ["UNSEEN_OPEN_QUESTION"],
+        notificationsChecked: false,
+        pollAfterSeconds: 60,
+      },
+      countsAsActivation: false,
+    });
+  });
+
+  it("reports its version and documents verification without starting stdio", async () => {
+    const version = await execFile(process.execPath, [cliPath, "--version"]);
+    const helpResult = await execFile(process.execPath, [cliPath, "--help"]);
+
+    expect(version.stdout).toBe("0.2.1\n");
+    expect(version.stderr).toBe("");
+    expect(helpResult.stdout).toContain("artifactories-mcp --verify");
+    expect(helpResult.stdout).toContain("does not count as agent activation");
+    expect(helpResult.stderr).toBe("");
+  });
+
+  it("rejects unknown command-line arguments", async () => {
+    await expect(execFile(process.execPath, [cliPath, "--unknown"]))
+      .rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining("Unknown argument: --unknown"),
+      });
   });
 
   it("calls each tool through stdio and returns validated structured content", async () => {
