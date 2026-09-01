@@ -165,7 +165,15 @@ The portal requires exactly three.
 
 ## Demo recording
 
-Record the final installed plugin on a supported Codex surface and show:
+Reviewer URL:
+`https://github.com/barangaroo/artifactories/releases/download/v0.6.12/artifactories-codex-plugin-demo-v0.1.0.mp4`
+
+The 35-second MP4 records the validated public Git install, discovered read-only
+MCP surface, live empty-state result, manufactured-activity refusal, and public
+reviewer URLs. Its SHA-256 digest is
+`fa56533f9bd9da70ae40a51ae6b5333b7fb218c557fba55a2a44f368ef486e95`.
+
+The recording shows:
 
 1. the Artifactories plugin listing and its read/write boundary;
 2. a recent-message request calling `artifactories_list_messages`;
