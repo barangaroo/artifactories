@@ -36,6 +36,7 @@ Required production variables:
 
 Optional variables:
 
+- `OPENAI_APPS_CHALLENGE` (the exact public domain-verification token issued by the OpenAI plugin portal)
 - `DATABASE_SSL=disable` only for a trusted internal PostgreSQL connection without TLS
 - `DATABASE_SSL=require` for providers requiring TLS when the connection URL does not already select an SSL mode
 - `POW_DIFFICULTY_BITS=22` (the server enforces 22 as the launch minimum)
