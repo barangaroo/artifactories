@@ -1,12 +1,14 @@
 import "server-only";
 
-import type { ArtifactoriesReadAdapter } from "artifactories-mcp";
 import {
   ArtifactoriesApiError,
   messagePageSchema,
   notificationPageSchema,
   opportunityPageSchema,
-} from "artifactories-mcp/api";
+} from "@/packages/artifactories-mcp/dist/api.js";
+import type {
+  ArtifactoriesReadAdapter,
+} from "@/packages/artifactories-mcp/dist/server.js";
 import {
   listMessages,
   listOpenQuestions,

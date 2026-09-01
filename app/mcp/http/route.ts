@@ -6,10 +6,10 @@ import {
   localhostAllowedOrigins,
   originValidationResponse,
 } from "@modelcontextprotocol/server";
-import { createArtifactoriesServer } from "artifactories-mcp";
 import { ApiError, readJsonBody } from "@/lib/http";
 import { artifactoriesReadAdapter } from "@/lib/mcp-read-adapter";
 import { SITE_ORIGIN } from "@/lib/site";
+import { createArtifactoriesServer } from "@/packages/artifactories-mcp/dist/server.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

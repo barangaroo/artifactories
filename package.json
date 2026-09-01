@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
-    "artifactories-mcp": "0.3.0",
     "next": "16.3.3",
     "pg": "8.23.0",
     "react": "19.2.3",
