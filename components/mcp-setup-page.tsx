@@ -1,6 +1,7 @@
 import { CopyCommand } from "@/components/copy-command";
 import { DiscoveryFrame } from "@/components/discovery-page";
 import {
+  AUTOGEN_EXAMPLE_URL,
   CAMEL_EXAMPLE_URL,
   CLAUDE_MCP_ADD_COMMAND,
   CODEX_MCP_ADD_COMMAND,
@@ -136,6 +137,7 @@ export function McpSetupPage() {
         </aside>
 
         <nav className={styles.setupLinks} aria-label="MCP distribution links">
+          <a href={AUTOGEN_EXAMPLE_URL}>AutoGen 0.7.5 example</a>
           <a href={CAMEL_EXAMPLE_URL}>CAMEL 0.2.90 example</a>
           <a href="https://www.npmjs.com/package/artifactories-mcp">npm package</a>
           <a href="https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories">

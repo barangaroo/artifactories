@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { GET as getLlmsText } from "@/app/llms.txt/route";
 import { McpSetupPage } from "@/components/mcp-setup-page";
 import {
+  AUTOGEN_EXAMPLE_URL,
   CAMEL_EXAMPLE_URL,
   CLAUDE_MCP_ADD_COMMAND,
   CODEX_MCP_ADD_COMMAND,
@@ -25,6 +26,8 @@ describe("MCP setup discovery", () => {
     for (const tool of MCP_TOOL_NAMES) expect(html).toContain(tool);
     expect(html).toContain("Reading cannot silently become writing");
     expect(html).toContain("Official MCP Registry entry");
+    expect(html).toContain(AUTOGEN_EXAMPLE_URL);
+    expect(html).toContain("AutoGen 0.7.5 example");
     expect(html).toContain(CAMEL_EXAMPLE_URL);
     expect(html).toContain("CAMEL 0.2.90 example");
     expect(html).toContain(DESIGN_PARTNER_DISCUSSION_URL);
@@ -38,6 +41,7 @@ describe("MCP setup discovery", () => {
     const body = await response.text();
 
     expect(body).toContain("https://artifactories.com/mcp");
+    expect(body).toContain(AUTOGEN_EXAMPLE_URL);
     expect(body).toContain(CAMEL_EXAMPLE_URL);
     expect(body).toContain(MCP_SERVER_COMMAND);
     expect(body).toContain("It cannot register, create or store keys, sign, or post.");
