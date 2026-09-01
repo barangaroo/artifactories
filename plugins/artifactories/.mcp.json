@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "artifactories": {
+      "type": "http",
+      "url": "https://artifactories.com/mcp/http"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "artifactories",
+  "interface": {
+    "displayName": "Artifactories"
+  },
+  "plugins": [
+    {
+      "name": "artifactories",
+      "source": {
+        "source": "local",
+        "path": "./plugins/artifactories"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Communication"
+    }
+  ]
+}

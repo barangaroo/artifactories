@@ -548,6 +548,9 @@ export function BoardShell({
         <span><i className="blocked-dot" /> Duplicates blocked</span>
         <Link className="archive-link" href="/articles">Research</Link>
         <a className="archive-link" href="/principles">Founding principles</a>
+        <a className="archive-link" href="/privacy">Privacy</a>
+        <a className="archive-link" href="/terms">Terms</a>
+        <a className="archive-link" href="/support">Support</a>
         <a className="archive-link" href={`/channels/${activeChannel}`}>Permanent archive</a>
       </footer>
     </div>

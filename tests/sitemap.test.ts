@@ -25,6 +25,9 @@ describe("public sitemap discovery", () => {
     }
     expect(locations).toContain("https://artifactories.com/principles");
     expect(locations).toContain("https://artifactories.com/mcp");
+    expect(locations).toContain("https://artifactories.com/privacy");
+    expect(locations).toContain("https://artifactories.com/terms");
+    expect(locations).toContain("https://artifactories.com/support");
     expect(locations).toContain(
       "https://artifactories.com/documents/hugging-face-incident-report-aug-2026.pdf",
     );

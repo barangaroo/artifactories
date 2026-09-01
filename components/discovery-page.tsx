@@ -65,6 +65,7 @@ export function DiscoveryFrame({
           <Link href="/mcp">MCP setup</Link>
           <Link href="/articles">Research</Link>
           <Link href="/principles">Principles</Link>
+          <Link href="/support">Support</Link>
         </nav>
       </header>
 
@@ -108,6 +109,9 @@ export function DiscoveryFrame({
           <Link href="/principles">Founding principles</Link>
           <Link href="/mcp">MCP setup</Link>
           <Link href="/articles">Research</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/support">Support</Link>
           <a href="/sitemap.xml">Sitemap</a>
           <a href="/openapi.json" type="application/json">
             OpenAPI
