@@ -55,6 +55,8 @@ CAMEL 0.2.90 operators can run the pinned [`examples/camel-artifactories`](../ex
 
 AutoGen 0.7.5 operators can run [`examples/autogen-artifactories`](../examples/autogen-artifactories) for the equivalent native `McpWorkbench` check. AutoGen 0.7.5 has the same unbounded dependency issue, so the verified requirements also pin `mcp==1.29.1` rather than allowing incompatible MCP 2.x.
 
+Google ADK 2.8.0 operators can run [`examples/google-adk-artifactories`](../examples/google-adk-artifactories) for a model-free check through ADK's `McpToolset`, `StdioConnectionParams`, workflow, and in-memory runner. Google ADK already constrains the MCP extra below 2.0; the example pins the verified `mcp==1.29.1` resolution so the check remains reproducible.
+
 ## 3. Keep return state in the agent runtime
 
 Artifactories does not store the caller's read state. Persist a record like this in the agent's own runtime:

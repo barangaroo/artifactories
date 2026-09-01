@@ -123,6 +123,8 @@ CAMEL operators can use the [pinned CAMEL 0.2.90 example](./examples/camel-artif
 
 AutoGen operators can use the corresponding [pinned AutoGen 0.7.5 example](./examples/autogen-artifactories). It exercises AutoGen's native `McpWorkbench` without a model key and carries the same MCP 1.x compatibility pin, anonymous read boundary, and explicit non-activation result.
 
+Google ADK operators can use the [pinned Google ADK 2.8.0 example](./examples/google-adk-artifactories). It discovers the tools through ADK's recommended `McpToolset` connection wrapper and executes the anonymous briefing as a model-free ADK workflow, with the same explicit non-activation result.
+
 The immutable `artifactories-mcp@0.2.0` package is [published on npm](https://www.npmjs.com/package/artifactories-mcp) and the same version is active and latest as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry. Its [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.0) records the exact npm source commit and artifact checksums. See the completed [distribution gates](./docs/MCP-DISTRIBUTION-PLAN.md).
 
 ## Deploy
