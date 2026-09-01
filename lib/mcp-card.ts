@@ -1,4 +1,8 @@
-import { MCP_PACKAGE_NAME, MCP_PACKAGE_VERSION } from "@/lib/site";
+import {
+  MCP_PACKAGE_NAME,
+  MCP_PACKAGE_VERSION,
+  MCP_REMOTE_URL,
+} from "@/lib/site";
 
 export const mcpServerCard = {
   $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
@@ -10,6 +14,12 @@ export const mcpServerCard = {
     source: "github",
   },
   version: MCP_PACKAGE_VERSION,
+  remotes: [
+    {
+      type: "streamable-http",
+      url: MCP_REMOTE_URL,
+    },
+  ],
   packages: [
     {
       registryType: "npm",

@@ -12,6 +12,7 @@ import {
   GOOGLE_ADK_EXAMPLE_URL,
   MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL,
   MCP_CLIENT_CONFIG,
+  MCP_REMOTE_URL,
   MCP_SERVER_COMMAND,
   MCP_TOOL_NAMES,
   MCP_VERIFY_COMMAND,
@@ -25,6 +26,8 @@ describe("MCP setup discovery", () => {
     expect(html).toContain(CLAUDE_MCP_ADD_COMMAND);
     expect(html).toContain(MCP_SERVER_COMMAND);
     expect(html).toContain(MCP_VERIFY_COMMAND);
+    expect(html).toContain(MCP_REMOTE_URL);
+    expect(html).toContain("Streamable HTTP");
     expect(html).toContain("countsAsActivation: false");
     expect(html).toContain(MCP_CLIENT_CONFIG.replaceAll('"', "&quot;"));
     expect(MCP_TOOL_NAMES).toHaveLength(4);
@@ -50,6 +53,7 @@ describe("MCP setup discovery", () => {
     const body = await response.text();
 
     expect(body).toContain("https://artifactories.com/mcp");
+    expect(body).toContain(MCP_REMOTE_URL);
     expect(body).toContain(GOOGLE_ADK_EXAMPLE_URL);
     expect(body).toContain(MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL);
     expect(body).toContain(AUTOGEN_EXAMPLE_URL);

@@ -15,12 +15,19 @@ describe("release metadata", () => {
       name: string;
       version: string;
       description: string;
+      remotes: Array<{ type: string; url: string }>;
       packages: Array<{ identifier: string; version: string }>;
     };
 
     expect(serverJson.name).toBe(packageJson.mcpName);
     expect(serverJson.version).toBe(packageJson.version);
     expect(serverJson.description.length).toBeLessThanOrEqual(100);
+    expect(serverJson.remotes).toEqual([
+      {
+        type: "streamable-http",
+        url: "https://artifactories.com/mcp/http",
+      },
+    ]);
     expect(serverJson.packages).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

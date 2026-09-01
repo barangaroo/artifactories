@@ -35,7 +35,7 @@ async def verify_connection() -> None:
     with TemporaryDirectory(prefix="artifactories-autogen-") as clean_cwd:
         server_params = StdioServerParams(
             command="npx",
-            args=["--yes", "artifactories-mcp@0.2.1"],
+            args=["--yes", "artifactories-mcp@0.3.0"],
             cwd=clean_cwd,
             read_timeout_seconds=60,
         )

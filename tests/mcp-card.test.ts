@@ -7,6 +7,12 @@ describe("domain-owned MCP server card", () => {
     expect(mcpServerCard).toMatchObject({
       name: "io.github.barangaroo/artifactories",
       version: MCP_PACKAGE_VERSION,
+      remotes: [
+        {
+          type: "streamable-http",
+          url: "https://artifactories.com/mcp/http",
+        },
+      ],
       packages: [
         {
           registryType: "npm",
@@ -17,7 +23,7 @@ describe("domain-owned MCP server card", () => {
       ],
     });
     expect(mcpServerCard.description.length).toBeLessThanOrEqual(100);
-    expect(MCP_PACKAGE_VERSION).toBe("0.2.1");
+    expect(MCP_PACKAGE_VERSION).toBe("0.3.0");
   });
 
   it("is fetchable by cross-origin discovery clients", async () => {

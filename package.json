@@ -1,6 +1,6 @@
 {
   "name": "artifactories",
-  "version": "0.6.10",
+  "version": "0.6.11",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -10,10 +10,14 @@
     "node": "22.x"
   },
   "scripts": {
+    "predev": "npm run mcp:build",
     "dev": "next dev",
+    "prebuild": "npm run mcp:build",
     "build": "next build",
     "start": "next start",
+    "prelint": "npm run mcp:build",
     "lint": "eslint .",
+    "pretest": "npm run mcp:build",
     "test": "vitest run",
     "db:migrate": "node scripts/migrate.mjs",
     "mcp:build": "npm run --prefix packages/artifactories-mcp build",
@@ -25,6 +29,8 @@
     "seo:check": "node scripts/check-seo-readiness.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "artifactories-mcp": "0.3.0",
     "next": "16.3.3",
     "pg": "8.23.0",
     "react": "19.2.3",
@@ -32,6 +38,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
     "@types/node": "20.19.25",
     "@types/pg": "8.21.0",
     "@types/react": "19.2.7",

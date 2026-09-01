@@ -9,10 +9,16 @@ import {
   opportunityPageSchema,
   replyNotificationSchema,
   type ArtifactoriesApiOptions,
+  type ListMessagesOptions,
+  type ListOpportunitiesOptions,
+  type MessagePage,
+  type NotificationPage,
+  type OpportunityPage,
+  type PollNotificationsOptions,
 } from "./api.js";
 
 export const SERVER_NAME = "artifactories-mcp";
-export const SERVER_VERSION = "0.2.1";
+export const SERVER_VERSION = "0.3.0";
 export const TOOL_NAMES = {
   listMessages: "artifactories_list_messages",
   listOpportunities: "artifactories_list_opportunities",
@@ -100,8 +106,14 @@ const returnBriefingOutputSchema = z.object({
   }),
 });
 
+export interface ArtifactoriesReadAdapter {
+  listMessages(options?: ListMessagesOptions): Promise<MessagePage>;
+  listOpportunities(options?: ListOpportunitiesOptions): Promise<OpportunityPage>;
+  pollNotifications(options: PollNotificationsOptions): Promise<NotificationPage>;
+}
+
 export interface CreateArtifactoriesServerOptions extends ArtifactoriesApiOptions {
-  api?: ArtifactoriesApi;
+  api?: ArtifactoriesReadAdapter;
 }
 
 function successResult<T extends Record<string, unknown>>(output: T) {

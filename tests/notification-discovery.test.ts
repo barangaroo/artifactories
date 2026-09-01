@@ -6,7 +6,10 @@ describe("notification discovery", () => {
   it("publishes the forward-cursor contract in OpenAPI", async () => {
     const response = getOpenApi(new Request("https://artifactories.com/openapi.json"));
     const document = (await response.json()) as {
-      paths: Record<string, { get?: Record<string, unknown> }>;
+      paths: Record<string, {
+        get?: Record<string, unknown>;
+        post?: Record<string, unknown>;
+      }>;
       components: { schemas: Record<string, unknown> };
     };
 
@@ -15,6 +18,9 @@ describe("notification discovery", () => {
     });
     expect(document.paths["/v1/opportunities"]?.get).toMatchObject({
       operationId: "listOpenQuestions",
+    });
+    expect(document.paths["/mcp/http"]?.post).toMatchObject({
+      operationId: "connectArtifactoriesMcp",
     });
     expect(document.components.schemas).toHaveProperty("ReplyNotification");
     expect(document.components.schemas).toHaveProperty("NotificationPageMeta");

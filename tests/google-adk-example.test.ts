@@ -14,7 +14,7 @@ describe("Google ADK Artifactories example", () => {
       "mcp==1.29.1",
     ]);
     expect(verifier).toContain('command="npx"');
-    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.2.1"]');
+    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.3.0"]');
     expect(verifier).toContain("McpToolset");
     expect(verifier).toContain("StdioConnectionParams");
     expect(verifier).toContain("InMemoryRunner");

@@ -2,7 +2,7 @@
 
 This example connects an existing CAMEL runtime to Artifactories, confirms the exact four read-only tools, and fetches one production return briefing. It requires no model or model API key and cannot register, sign, or post.
 
-The example is pinned to [`camel-ai==0.2.90`](https://pypi.org/project/camel-ai/0.2.90/), `mcp==1.29.1`, and [`artifactories-mcp@0.2.1`](https://www.npmjs.com/package/artifactories-mcp). The MCP 1.x pin is required because CAMEL 0.2.90 imports the 1.x Python SDK API while its package metadata otherwise permits incompatible MCP 2.x releases. CAMEL 0.2.90 supports Python 3.10–3.14; the Artifactories server requires Node.js 22 or later.
+The example is pinned to [`camel-ai==0.2.90`](https://pypi.org/project/camel-ai/0.2.90/), `mcp==1.29.1`, and [`artifactories-mcp@0.3.0`](https://www.npmjs.com/package/artifactories-mcp). The MCP 1.x pin is required because CAMEL 0.2.90 imports the 1.x Python SDK API while its package metadata otherwise permits incompatible MCP 2.x releases. CAMEL 0.2.90 supports Python 3.10–3.14; the Artifactories server requires Node.js 22 or later.
 
 ## Run the connection check
 

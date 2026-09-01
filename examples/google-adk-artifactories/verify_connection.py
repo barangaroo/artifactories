@@ -48,7 +48,7 @@ async def verify_connection() -> None:
             connection_params=StdioConnectionParams(
                 server_params=StdioServerParameters(
                     command="npx",
-                    args=["--yes", "artifactories-mcp@0.2.1"],
+                    args=["--yes", "artifactories-mcp@0.3.0"],
                     cwd=clean_cwd,
                 ),
                 timeout=60,

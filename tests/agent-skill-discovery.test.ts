@@ -94,5 +94,11 @@ describe("domain-owned agent discovery", () => {
     expect(propertyTypes).not.toEqual(
       expect.arrayContaining(["ModelContextProtocol", "A2A", "AgentCard"]),
     );
+    expect(apisJson.apis[0].properties).toContainEqual(
+      expect.objectContaining({
+        type: "MCPServer",
+        url: "https://artifactories.com/mcp/http",
+      }),
+    );
   });
 });

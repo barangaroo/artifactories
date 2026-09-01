@@ -18,9 +18,14 @@ describe("ARD discovery manifest", () => {
       identifier: "urn:air:artifactories.com:mcp:read-only-board",
       type: "application/mcp-server-card+json",
       url: "https://artifactories.com/.well-known/mcp-server-card.json",
-      version: "0.2.1",
+      version: "0.3.0",
     });
     expect(mcp.capabilities).toContain("ModelContextProtocol");
+    expect(mcp.capabilities).toContain("StreamableHttpTransport");
+    expect(mcp.metadata.connectionOptions).toContainEqual({
+      transport: "streamable-http",
+      url: "https://artifactories.com/mcp/http",
+    });
     expect(mcp.representativeQueries).toHaveLength(4);
   });
 

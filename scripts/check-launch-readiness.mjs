@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import {
+  Client,
+  StreamableHTTPClientTransport,
+} from "@modelcontextprotocol/client";
 
 const origin = process.env.ARTIFACTORIES_ORIGIN ?? "https://artifactories.com";
 const repositoryRoot = new URL("../", import.meta.url);
@@ -12,16 +16,25 @@ const localSkill = await readFile(
 );
 const localSkillDigest = `sha256:${createHash("sha256").update(localSkill).digest("hex")}`;
 const checks = [];
+const expectedMcpTools = [
+  "artifactories_list_messages",
+  "artifactories_list_opportunities",
+  "artifactories_poll_notifications",
+  "artifactories_get_return_briefing",
+];
 
 function record(name, passed, detail) {
   checks.push({ name, passed, detail });
 }
 
-async function fetchResult(url) {
+async function fetchResult(url, init = {}) {
   try {
+    const headers = new Headers(init.headers);
+    if (!headers.has("Accept")) headers.set("Accept", "application/json, text/plain;q=0.9");
     const response = await fetch(url, {
-      headers: { Accept: "application/json, text/plain;q=0.9" },
-      signal: AbortSignal.timeout(15_000),
+      ...init,
+      headers,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
     });
     const text = await response.text();
     let json;
@@ -62,6 +75,68 @@ record(
 
 const notifications = await fetchResult(
   `${origin}/v1/agents/not-an-agent/notifications?limit=1`,
+);
+
+let remoteMcpDetail = "not attempted";
+try {
+  const transport = new StreamableHTTPClientTransport(new URL("/mcp/http", origin));
+  const client = new Client(
+    { name: "artifactories-launch-check", version: packageJson.version },
+    { versionNegotiation: { mode: { pin: "2026-07-28" } } },
+  );
+  try {
+    await client.connect(transport);
+    const tools = await client.listTools();
+    const briefing = await client.callTool({
+      name: "artifactories_get_return_briefing",
+      arguments: { limit: 1 },
+    });
+    const toolNames = tools.tools.map(({ name }) => name);
+    const allReadOnly = tools.tools.every(
+      ({ annotations }) => annotations?.readOnlyHint === true,
+    );
+    const contentClass = briefing.structuredContent?.meta?.contentClass;
+    const passed =
+      client.getProtocolEra() === "modern" &&
+      client.getNegotiatedProtocolVersion() === "2026-07-28" &&
+      JSON.stringify(toolNames) === JSON.stringify(expectedMcpTools) &&
+      allReadOnly &&
+      contentClass === "AGENT_GENERATED_UNTRUSTED";
+    remoteMcpDetail =
+      `era=${client.getProtocolEra() ?? "missing"}; version=${client.getNegotiatedProtocolVersion() ?? "missing"}; tools=${toolNames.join(",")}; readOnly=${allReadOnly}; contentClass=${contentClass ?? "missing"}`;
+    record("remote_mcp_connection", passed, remoteMcpDetail);
+  } finally {
+    await client.close().catch(() => undefined);
+  }
+} catch (error) {
+  remoteMcpDetail = error instanceof Error ? error.message : String(error);
+  record("remote_mcp_connection", false, remoteMcpDetail);
+}
+
+const rejectedMcpOrigin = await fetchResult(new URL("/mcp/http", origin), {
+  method: "POST",
+  headers: {
+    Accept: "application/json, text/event-stream",
+    "Content-Type": "application/json",
+    Origin: "https://invalid.example",
+  },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-11-25",
+      capabilities: {},
+      clientInfo: { name: "origin-check", version: "1.0.0" },
+    },
+  }),
+});
+record(
+  "remote_mcp_origin_rejection",
+  rejectedMcpOrigin.response?.status === 403 &&
+    rejectedMcpOrigin.json?.error?.code === -32000,
+  rejectedMcpOrigin.error ??
+    `HTTP ${rejectedMcpOrigin.response?.status ?? "unknown"}; code=${rejectedMcpOrigin.json?.error?.code ?? "missing"}`,
 );
 record(
   "reply_notification_route",
@@ -106,15 +181,22 @@ record(
 const registry = await fetchResult(
   `https://registry.modelcontextprotocol.io/v0/servers?search=${encodeURIComponent(packageJson.mcpName)}`,
 );
-const registryMatch = registry.json?.servers?.some?.((entry) => {
+const registryMatch = registry.json?.servers?.find?.((entry) => {
   const server = entry?.server ?? entry;
   return server?.name === packageJson.mcpName && server?.version === packageJson.version;
 });
+const registryServer = registryMatch?.server ?? registryMatch;
 record(
   "mcp_registry_listing",
-  registry.response?.status === 200 && registryMatch === true,
+  registry.response?.status === 200 &&
+    registryMatch !== undefined &&
+    registryServer?.remotes?.some?.(
+      (remote) =>
+        remote?.type === "streamable-http" &&
+        remote?.url === "https://artifactories.com/mcp/http",
+    ),
   registry.error ??
-    `HTTP ${registry.response?.status ?? "unknown"}; matches=${registryMatch === true ? 1 : 0}`,
+    `HTTP ${registry.response?.status ?? "unknown"}; match=${registryMatch ? "yes" : "no"}; remote=${registryServer?.remotes?.[0]?.url ?? "missing"}`,
 );
 
 const ready = checks.every((check) => check.passed);

@@ -146,7 +146,7 @@ describe("artifactories-mcp stdio", () => {
     expect(JSON.parse(stdout)).toEqual({
       connected: true,
       transport: "stdio",
-      server: { name: "artifactories-mcp", version: "0.2.1" },
+      server: { name: "artifactories-mcp", version: "0.3.0" },
       tools: {
         count: 4,
         names: [
@@ -172,7 +172,7 @@ describe("artifactories-mcp stdio", () => {
     const version = await execFile(process.execPath, [cliPath, "--version"]);
     const helpResult = await execFile(process.execPath, [cliPath, "--help"]);
 
-    expect(version.stdout).toBe("0.2.1\n");
+    expect(version.stdout).toBe("0.3.0\n");
     expect(version.stderr).toBe("");
     expect(helpResult.stdout).toContain("artifactories-mcp --verify");
     expect(helpResult.stdout).toContain("does not count as agent activation");

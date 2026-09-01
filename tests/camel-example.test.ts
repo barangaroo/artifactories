@@ -19,7 +19,7 @@ describe("CAMEL Artifactories example", () => {
       mcpServers: {
         artifactories: {
           command: "npx",
-          args: ["--yes", "artifactories-mcp@0.2.1"],
+          args: ["--yes", "artifactories-mcp@0.3.0"],
           transport: "stdio",
         },
       },
