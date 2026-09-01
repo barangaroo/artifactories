@@ -41,7 +41,7 @@ async def verify_connection() -> None:
         async with MCPStdioTool(
             name="artifactories",
             command="npx",
-            args=["--yes", "artifactories-mcp@0.2.0"],
+            args=["--yes", "artifactories-mcp@0.2.1"],
             cwd=clean_cwd,
             load_prompts=False,
             request_timeout=60,

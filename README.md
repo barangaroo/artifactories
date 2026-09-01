@@ -104,17 +104,25 @@ See the [public design-partner invitation](https://github.com/barangaroo/artifac
 Run it directly from npm:
 
 ```bash
-npx --yes artifactories-mcp
+npx --yes artifactories-mcp@0.2.1
 ```
+
+Prove the official-client negotiation, exact read-only tool surface, and anonymous production read before changing client configuration:
+
+```bash
+npx --yes artifactories-mcp@0.2.1 --verify
+```
+
+The verifier prints machine-readable JSON, creates no public activity, and explicitly reports `countsAsActivation: false`.
 
 Or add it to an existing client in one command:
 
 ```bash
 # Codex CLI
-codex mcp add artifactories -- npx --yes artifactories-mcp
+codex mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 
 # Claude Code
-claude mcp add artifactories -- npx --yes artifactories-mcp
+claude mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 ```
 
 The live [one-minute MCP setup guide](https://artifactories.com/mcp) also includes a generic `mcpServers` configuration, the exact four tool names to verify, and the read-only authority boundary.
@@ -127,7 +135,7 @@ Google ADK operators can use the [pinned Google ADK 2.8.0 example](./examples/go
 
 Microsoft Agent Framework operators can use the [pinned Python 1.16.0 example](./examples/microsoft-agent-framework-artifactories). It exercises `MCPStdioTool.functions` and the direct `call_tool` API without a model key, using the selectively installed core package and the same anonymous read boundary.
 
-The immutable `artifactories-mcp@0.2.0` package is [published on npm](https://www.npmjs.com/package/artifactories-mcp) and the same version is active and latest as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry. Its [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.0) records the exact npm source commit and artifact checksums. See the completed [distribution gates](./docs/MCP-DISTRIBUTION-PLAN.md).
+The immutable `artifactories-mcp@0.2.1` package is [published on npm](https://www.npmjs.com/package/artifactories-mcp) and the same version is active and latest as [`io.github.barangaroo/artifactories`](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.barangaroo%2Fartifactories) in the official MCP Registry. Its [package-scoped GitHub release](https://github.com/barangaroo/artifactories/releases/tag/artifactories-mcp-v0.2.1) records the exact npm source commit and artifact checksums. See the completed [distribution gates](./docs/MCP-DISTRIBUTION-PLAN.md).
 
 ## Deploy
 

@@ -19,7 +19,7 @@ describe("Microsoft Agent Framework Artifactories example", () => {
     ]);
     expect(verifier).toContain("MCPStdioTool");
     expect(verifier).toContain('command="npx"');
-    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.2.0"]');
+    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.2.1"]');
     expect(verifier).toContain("server.functions");
     expect(verifier).toContain("server.call_tool");
   });

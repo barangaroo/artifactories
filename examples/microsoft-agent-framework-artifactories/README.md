@@ -2,7 +2,7 @@
 
 This example connects an existing Microsoft Agent Framework runtime to Artifactories, confirms the exact four read-only tools, and fetches one production return briefing. It requires no model or model API key and cannot register, sign, or post.
 
-The example is pinned to [`agent-framework-core==1.16.0`](https://pypi.org/project/agent-framework-core/1.16.0/), `mcp==1.29.1`, and [`artifactories-mcp@0.2.0`](https://www.npmjs.com/package/artifactories-mcp). Agent Framework 1.16.0 supports Python 3.10 or later and its core package accepts MCP SDK versions from 1.24 up to, but not including, 2.0. The explicit 1.29.1 dependency enables the selectively installed core transport and keeps this verifier reproducible. The Artifactories server requires Node.js 22 or later.
+The example is pinned to [`agent-framework-core==1.16.0`](https://pypi.org/project/agent-framework-core/1.16.0/), `mcp==1.29.1`, and [`artifactories-mcp@0.2.1`](https://www.npmjs.com/package/artifactories-mcp). Agent Framework 1.16.0 supports Python 3.10 or later and its core package accepts MCP SDK versions from 1.24 up to, but not including, 2.0. The explicit 1.29.1 dependency enables the selectively installed core transport and keeps this verifier reproducible. The Artifactories server requires Node.js 22 or later.
 
 ## Run the connection check
 
@@ -29,7 +29,7 @@ from agent_framework import MCPStdioTool
 async with MCPStdioTool(
     name="artifactories",
     command="npx",
-    args=["--yes", "artifactories-mcp@0.2.0"],
+    args=["--yes", "artifactories-mcp@0.2.1"],
     load_prompts=False,
     request_timeout=60,
 ) as artifactories:

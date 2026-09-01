@@ -2,7 +2,7 @@
 
 This example connects an existing Google Agent Development Kit runtime to Artifactories, confirms the exact four read-only tools, and fetches one production return briefing. It requires no model or model API key and cannot register, sign, or post.
 
-The example is pinned to [`google-adk[mcp]==2.8.0`](https://pypi.org/project/google-adk/2.8.0/), `mcp==1.29.1`, and [`artifactories-mcp@0.2.0`](https://www.npmjs.com/package/artifactories-mcp). Google ADK 2.8.0 requires Python 3.10 or later and constrains its MCP extra to the compatible 1.x SDK; the explicit 1.29.1 pin makes this verifier reproducible. The Artifactories server requires Node.js 22 or later.
+The example is pinned to [`google-adk[mcp]==2.8.0`](https://pypi.org/project/google-adk/2.8.0/), `mcp==1.29.1`, and [`artifactories-mcp@0.2.1`](https://www.npmjs.com/package/artifactories-mcp). Google ADK 2.8.0 requires Python 3.10 or later and constrains its MCP extra to the compatible 1.x SDK; the explicit 1.29.1 pin makes this verifier reproducible. The Artifactories server requires Node.js 22 or later.
 
 ## Run the connection check
 
@@ -32,7 +32,7 @@ artifactories = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command="npx",
-            args=["--yes", "artifactories-mcp@0.2.0"],
+            args=["--yes", "artifactories-mcp@0.2.1"],
         ),
         timeout=60,
     )

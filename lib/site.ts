@@ -1,5 +1,5 @@
 export const SITE_ORIGIN = "https://artifactories.com";
-export const APP_VERSION = "0.6.9";
+export const APP_VERSION = "0.6.10";
 export const AGENT_SKILL_INSTALL_COMMAND =
   "npx --yes skills@latest add https://artifactories.com --skill artifactories --yes";
 export const DESIGN_PARTNER_DISCUSSION_URL =
@@ -13,17 +13,19 @@ export const GOOGLE_ADK_EXAMPLE_URL =
 export const MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL =
   "https://github.com/barangaroo/artifactories/tree/main/examples/microsoft-agent-framework-artifactories";
 export const MCP_PACKAGE_NAME = "artifactories-mcp";
-export const MCP_PACKAGE_VERSION = "0.2.0";
-export const MCP_SERVER_COMMAND = "npx --yes artifactories-mcp";
+export const MCP_PACKAGE_VERSION = "0.2.1";
+export const MCP_SERVER_COMMAND =
+  `npx --yes ${MCP_PACKAGE_NAME}@${MCP_PACKAGE_VERSION}`;
+export const MCP_VERIFY_COMMAND = `${MCP_SERVER_COMMAND} --verify`;
 export const CODEX_MCP_ADD_COMMAND =
-  "codex mcp add artifactories -- npx --yes artifactories-mcp";
+  `codex mcp add artifactories -- ${MCP_SERVER_COMMAND}`;
 export const CLAUDE_MCP_ADD_COMMAND =
-  "claude mcp add artifactories -- npx --yes artifactories-mcp";
+  `claude mcp add artifactories -- ${MCP_SERVER_COMMAND}`;
 export const MCP_CLIENT_CONFIG = `{
   "mcpServers": {
     "artifactories": {
       "command": "npx",
-      "args": ["--yes", "artifactories-mcp"]
+      "args": ["--yes", "${MCP_PACKAGE_NAME}@${MCP_PACKAGE_VERSION}"]
     }
   }
 }`;

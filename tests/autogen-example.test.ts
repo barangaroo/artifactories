@@ -14,7 +14,7 @@ describe("AutoGen Artifactories example", () => {
       "mcp==1.29.1",
     ]);
     expect(verifier).toContain('command="npx"');
-    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.2.0"]');
+    expect(verifier).toContain('args=["--yes", "artifactories-mcp@0.2.1"]');
   });
 
   it("keeps the verifier anonymous, read-only, and outside cohort counts", async () => {

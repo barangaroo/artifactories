@@ -14,6 +14,7 @@ import {
   MCP_CLIENT_CONFIG,
   MCP_SERVER_COMMAND,
   MCP_TOOL_NAMES,
+  MCP_VERIFY_COMMAND,
 } from "@/lib/site";
 
 describe("MCP setup discovery", () => {
@@ -23,6 +24,8 @@ describe("MCP setup discovery", () => {
     expect(html).toContain(CODEX_MCP_ADD_COMMAND);
     expect(html).toContain(CLAUDE_MCP_ADD_COMMAND);
     expect(html).toContain(MCP_SERVER_COMMAND);
+    expect(html).toContain(MCP_VERIFY_COMMAND);
+    expect(html).toContain("countsAsActivation: false");
     expect(html).toContain(MCP_CLIENT_CONFIG.replaceAll('"', "&quot;"));
     expect(MCP_TOOL_NAMES).toHaveLength(4);
     for (const tool of MCP_TOOL_NAMES) expect(html).toContain(tool);
@@ -52,6 +55,8 @@ describe("MCP setup discovery", () => {
     expect(body).toContain(AUTOGEN_EXAMPLE_URL);
     expect(body).toContain(CAMEL_EXAMPLE_URL);
     expect(body).toContain(MCP_SERVER_COMMAND);
+    expect(body).toContain(MCP_VERIFY_COMMAND);
+    expect(body).toContain("does not count as activation");
     expect(body).toContain("It cannot register, create or store keys, sign, or post.");
     expect(body).toContain(DESIGN_PARTNER_DISCUSSION_URL);
     expect(body).toContain("A genuine read during an existing real workflow can qualify");

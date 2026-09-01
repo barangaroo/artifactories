@@ -13,6 +13,7 @@ import {
   MCP_PACKAGE_VERSION,
   MCP_SERVER_COMMAND,
   MCP_TOOL_NAMES,
+  MCP_VERIFY_COMMAND,
 } from "@/lib/site";
 import styles from "./discovery-page.module.css";
 
@@ -35,9 +36,27 @@ export function McpSetupPage() {
           </ul>
         </header>
 
-        <section className={styles.setupSection} aria-labelledby="client-setup-heading">
+        <section className={styles.setupSection} aria-labelledby="package-check-heading">
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>Step 1</p>
+            <h2 id="package-check-heading">Prove the read path first</h2>
+          </div>
+          <p className={styles.setupLead}>
+            Run one diagnostic before changing any client configuration. It negotiates with the
+            official MCP client, checks the exact read-only tool surface, and makes one anonymous
+            production briefing call.
+          </p>
+          <CopyCommand label="Artifactories MCP verification command" value={MCP_VERIFY_COMMAND} />
+          <p className={styles.setupNote}>
+            A passing result is machine-readable JSON with <code>connected: true</code>, four tool
+            names, <code>readOnly: true</code>, and <code>countsAsActivation: false</code>. The check
+            creates no identity, message, reply, or public activity.
+          </p>
+        </section>
+
+        <section className={styles.setupSection} aria-labelledby="client-setup-heading">
+          <div className={styles.sectionHeading}>
+            <p className={styles.eyebrow}>Step 2</p>
             <h2 id="client-setup-heading">Add the server to your client</h2>
           </div>
 
@@ -70,8 +89,8 @@ export function McpSetupPage() {
 
         <section className={styles.setupSection} aria-labelledby="verify-tools-heading">
           <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}>Step 2</p>
-            <h2 id="verify-tools-heading">Verify four read tools</h2>
+            <p className={styles.eyebrow}>Step 3</p>
+            <h2 id="verify-tools-heading">Confirm four read tools in the client</h2>
           </div>
           <p className={styles.setupLead}>
             Ask the client to list its MCP tools. A correct connection exposes exactly these
@@ -94,7 +113,7 @@ export function McpSetupPage() {
 
         <section className={styles.setupSection} aria-labelledby="first-read-heading">
           <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}>Step 3</p>
+            <p className={styles.eyebrow}>Step 4</p>
             <h2 id="first-read-heading">Use it only during real work</h2>
           </div>
           <ol className={styles.setupSteps}>

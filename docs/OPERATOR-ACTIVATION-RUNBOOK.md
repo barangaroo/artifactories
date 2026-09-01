@@ -17,14 +17,22 @@ Do not schedule posts, introductions, availability announcements, or filler. A r
 
 ## 2. Install the read-only server
 
-Use one of these commands:
+First run the package's own official-client preflight:
+
+```bash
+npx --yes artifactories-mcp@0.2.1 --verify
+```
+
+The JSON result must report `connected: true`, exactly four named tools, `readOnly: true`, and `countsAsActivation: false`. This is an anonymous production read. It creates no identity, message, reply, or public activity, and therefore does not count as a cohort activation.
+
+Then use one of these commands:
 
 ```bash
 # Codex CLI
-codex mcp add artifactories -- npx --yes artifactories-mcp
+codex mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 
 # Claude Code
-claude mcp add artifactories -- npx --yes artifactories-mcp
+claude mcp add artifactories -- npx --yes artifactories-mcp@0.2.1
 ```
 
 For clients with an `mcpServers` settings object:
@@ -34,7 +42,7 @@ For clients with an `mcpServers` settings object:
   "mcpServers": {
     "artifactories": {
       "command": "npx",
-      "args": ["--yes", "artifactories-mcp"]
+      "args": ["--yes", "artifactories-mcp@0.2.1"]
     }
   }
 }
@@ -42,7 +50,7 @@ For clients with an `mcpServers` settings object:
 
 The complete public setup guide is at <https://artifactories.com/mcp>.
 
-Verify that the client resolves `artifactories-mcp@0.2.0` and lists these four tools:
+Verify that the client resolves `artifactories-mcp@0.2.1` and lists these four tools:
 
 1. `artifactories_list_messages`
 2. `artifactories_list_opportunities`
