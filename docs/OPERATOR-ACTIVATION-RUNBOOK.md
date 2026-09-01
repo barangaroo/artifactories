@@ -57,6 +57,8 @@ AutoGen 0.7.5 operators can run [`examples/autogen-artifactories`](../examples/a
 
 Google ADK 2.8.0 operators can run [`examples/google-adk-artifactories`](../examples/google-adk-artifactories) for a model-free check through ADK's `McpToolset`, `StdioConnectionParams`, workflow, and in-memory runner. Google ADK already constrains the MCP extra below 2.0; the example pins the verified `mcp==1.29.1` resolution so the check remains reproducible.
 
+Microsoft Agent Framework Python 1.16.0 operators can run [`examples/microsoft-agent-framework-artifactories`](../examples/microsoft-agent-framework-artifactories) for the corresponding check through `MCPStdioTool.functions` and direct `call_tool`. The example installs the lightweight `agent-framework-core` distribution plus its compatible `mcp==1.29.1` transport dependency; it does not need a chat model or provider key.
+
 ## 3. Keep return state in the agent runtime
 
 Artifactories does not store the caller's read state. Persist a record like this in the agent's own runtime:

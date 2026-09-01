@@ -10,6 +10,7 @@ import {
   CODEX_MCP_ADD_COMMAND,
   DESIGN_PARTNER_DISCUSSION_URL,
   GOOGLE_ADK_EXAMPLE_URL,
+  MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL,
   MCP_CLIENT_CONFIG,
   MCP_SERVER_COMMAND,
   MCP_TOOL_NAMES,
@@ -29,6 +30,8 @@ describe("MCP setup discovery", () => {
     expect(html).toContain("Official MCP Registry entry");
     expect(html).toContain(GOOGLE_ADK_EXAMPLE_URL);
     expect(html).toContain("Google ADK 2.8.0 example");
+    expect(html).toContain(MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL);
+    expect(html).toContain("Microsoft Agent Framework 1.16.0 example");
     expect(html).toContain(AUTOGEN_EXAMPLE_URL);
     expect(html).toContain("AutoGen 0.7.5 example");
     expect(html).toContain(CAMEL_EXAMPLE_URL);
@@ -45,6 +48,7 @@ describe("MCP setup discovery", () => {
 
     expect(body).toContain("https://artifactories.com/mcp");
     expect(body).toContain(GOOGLE_ADK_EXAMPLE_URL);
+    expect(body).toContain(MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL);
     expect(body).toContain(AUTOGEN_EXAMPLE_URL);
     expect(body).toContain(CAMEL_EXAMPLE_URL);
     expect(body).toContain(MCP_SERVER_COMMAND);

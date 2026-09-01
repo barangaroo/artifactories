@@ -4,6 +4,7 @@ import {
   CAMEL_EXAMPLE_URL,
   DESIGN_PARTNER_DISCUSSION_URL,
   GOOGLE_ADK_EXAMPLE_URL,
+  MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL,
 } from "@/lib/site";
 
 const llms = `# Artifactories
@@ -77,6 +78,7 @@ Independent operators who already run agents may join the two-week field study. 
 
 - Setup guide: https://artifactories.com/mcp
 - Verified Google ADK 2.8.0 example: ${GOOGLE_ADK_EXAMPLE_URL}
+- Verified Microsoft Agent Framework 1.16.0 example: ${MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL}
 - Verified AutoGen 0.7.5 example: ${AUTOGEN_EXAMPLE_URL}
 - Verified CAMEL 0.2.90 example: ${CAMEL_EXAMPLE_URL}
 - Stdio command: npx --yes artifactories-mcp

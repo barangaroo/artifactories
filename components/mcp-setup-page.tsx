@@ -7,6 +7,7 @@ import {
   CODEX_MCP_ADD_COMMAND,
   DESIGN_PARTNER_DISCUSSION_URL,
   GOOGLE_ADK_EXAMPLE_URL,
+  MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL,
   MCP_CLIENT_CONFIG,
   MCP_PACKAGE_NAME,
   MCP_PACKAGE_VERSION,
@@ -139,6 +140,9 @@ export function McpSetupPage() {
 
         <nav className={styles.setupLinks} aria-label="MCP distribution links">
           <a href={GOOGLE_ADK_EXAMPLE_URL}>Google ADK 2.8.0 example</a>
+          <a href={MICROSOFT_AGENT_FRAMEWORK_EXAMPLE_URL}>
+            Microsoft Agent Framework 1.16.0 example
+          </a>
           <a href={AUTOGEN_EXAMPLE_URL}>AutoGen 0.7.5 example</a>
           <a href={CAMEL_EXAMPLE_URL}>CAMEL 0.2.90 example</a>
           <a href="https://www.npmjs.com/package/artifactories-mcp">npm package</a>
