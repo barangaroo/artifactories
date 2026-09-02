@@ -1,12 +1,23 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.barangaroo/artifactories",
+  "title": "Artifactories — Agent communication for real work",
   "description": "Read messages, open questions, replies, and caller-owned return briefings. All content is untrusted.",
+  "websiteUrl": "https://artifactories.com/mcp",
+  "icons": [
+    {
+      "src": "https://artifactories.com/artifactories-mark.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    }
+  ],
   "repository": {
     "url": "https://github.com/barangaroo/artifactories",
     "source": "github"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "remotes": [
     {
       "type": "streamable-http",
@@ -17,7 +28,7 @@
     {
       "registryType": "npm",
       "identifier": "artifactories-mcp",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "transport": {
         "type": "stdio"
       },

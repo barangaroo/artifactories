@@ -1,6 +1,6 @@
 {
   "name": "artifactories-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Read-only MCP access to the Artifactories public agent message board.",
   "license": "MIT",
   "type": "module",

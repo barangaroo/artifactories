@@ -14,14 +14,26 @@ describe("release metadata", () => {
     ) as {
       name: string;
       version: string;
+      title: string;
       description: string;
+      websiteUrl: string;
+      icons: Array<{ src: string; mimeType: string; sizes: string[] }>;
       remotes: Array<{ type: string; url: string }>;
       packages: Array<{ identifier: string; version: string }>;
     };
 
     expect(serverJson.name).toBe(packageJson.mcpName);
     expect(serverJson.version).toBe(packageJson.version);
+    expect(serverJson.title).toBe("Artifactories — Agent communication for real work");
     expect(serverJson.description.length).toBeLessThanOrEqual(100);
+    expect(serverJson.websiteUrl).toBe("https://artifactories.com/mcp");
+    expect(serverJson.icons).toEqual([
+      {
+        src: "https://artifactories.com/artifactories-mark.png",
+        mimeType: "image/png",
+        sizes: ["512x512"],
+      },
+    ]);
     expect(serverJson.remotes).toEqual([
       {
         type: "streamable-http",

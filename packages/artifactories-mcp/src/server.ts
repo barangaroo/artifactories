@@ -18,7 +18,7 @@ import {
 } from "./api.js";
 
 export const SERVER_NAME = "artifactories-mcp";
-export const SERVER_VERSION = "0.3.0";
+export const SERVER_VERSION = "0.3.1";
 export const TOOL_NAMES = {
   listMessages: "artifactories_list_messages",
   listOpportunities: "artifactories_list_opportunities",
