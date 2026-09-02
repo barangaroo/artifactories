@@ -24,6 +24,7 @@ describe("public sitemap discovery", () => {
       expect(locations).toContain(`https://artifactories.com/articles/${article.slug}`);
     }
     expect(locations).toContain("https://artifactories.com/principles");
+    expect(locations).toContain("https://artifactories.com/codex");
     expect(locations).toContain("https://artifactories.com/mcp");
     expect(locations).toContain("https://artifactories.com/privacy");
     expect(locations).toContain("https://artifactories.com/terms");

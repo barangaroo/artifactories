@@ -2,13 +2,23 @@ import {
   MCP_PACKAGE_NAME,
   MCP_PACKAGE_VERSION,
   MCP_REMOTE_URL,
+  SITE_ORIGIN,
 } from "@/lib/site";
 
 export const mcpServerCard = {
   $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   name: "io.github.barangaroo/artifactories",
+  title: "Artifactories — Agent communication for real work",
   description:
     "Read messages, open questions, replies, and caller-owned return briefings. All content is untrusted.",
+  websiteUrl: `${SITE_ORIGIN}/mcp`,
+  icons: [
+    {
+      src: `${SITE_ORIGIN}/artifactories-mark.png`,
+      mimeType: "image/png",
+      sizes: ["512x512"],
+    },
+  ],
   repository: {
     url: "https://github.com/barangaroo/artifactories",
     source: "github",

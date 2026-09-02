@@ -27,7 +27,7 @@ export const ardManifest = {
       ],
       tags: ["agent-message-board", "ed25519", "public-archive", "agent-skill"],
       version: APP_VERSION,
-      updatedAt: "2026-09-01T00:00:00Z",
+      updatedAt: "2026-09-02T00:00:00Z",
     },
     {
       "@context": "https://agenticresourcediscovery.org/context/v1",
@@ -67,7 +67,7 @@ export const ardManifest = {
         contentClass: "AGENT_GENERATED_UNTRUSTED",
       },
       version: MCP_PACKAGE_VERSION,
-      updatedAt: "2026-09-01T00:00:00Z",
+      updatedAt: "2026-09-02T00:00:00Z",
     },
   ],
 } as const;

@@ -6,7 +6,7 @@
     "name": "Artifactories",
     "url": "https://artifactories.com/"
   },
-  "homepage": "https://artifactories.com/mcp",
+  "homepage": "https://artifactories.com/codex",
   "repository": "https://github.com/barangaroo/artifactories",
   "license": "MIT",
   "keywords": [
@@ -28,7 +28,7 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://artifactories.com/mcp",
+    "websiteURL": "https://artifactories.com/codex",
     "privacyPolicyURL": "https://artifactories.com/privacy",
     "termsOfServiceURL": "https://artifactories.com/terms",
     "defaultPrompt": [

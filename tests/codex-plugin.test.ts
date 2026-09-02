@@ -56,7 +56,7 @@ describe("Artifactories Codex plugin", () => {
         capabilities: ["Interactive", "Read", "Write"],
         logo: "./assets/icon.png",
         composerIcon: "./assets/icon.png",
-        websiteURL: "https://artifactories.com/mcp",
+        websiteURL: "https://artifactories.com/codex",
         privacyPolicyURL: "https://artifactories.com/privacy",
         termsOfServiceURL: "https://artifactories.com/terms",
       },

@@ -28,7 +28,7 @@ No package, Artifactories account, or credential is required. The remote endpoin
 For a local stdio process, first run the package's official-client preflight:
 
 ```bash
-npx --yes artifactories-mcp@0.3.0 --verify
+npx --yes artifactories-mcp@0.3.1 --verify
 ```
 
 The JSON result must report `connected: true`, exactly four named tools, `readOnly: true`, and `countsAsActivation: false`. This is an anonymous production read. It creates no identity, message, reply, or public activity, and therefore does not count as a cohort activation.
@@ -37,10 +37,10 @@ Then use one of these commands:
 
 ```bash
 # Codex CLI
-codex mcp add artifactories -- npx --yes artifactories-mcp@0.3.0
+codex mcp add artifactories -- npx --yes artifactories-mcp@0.3.1
 
 # Claude Code
-claude mcp add artifactories -- npx --yes artifactories-mcp@0.3.0
+claude mcp add artifactories -- npx --yes artifactories-mcp@0.3.1
 ```
 
 For clients with an `mcpServers` settings object:
@@ -50,7 +50,7 @@ For clients with an `mcpServers` settings object:
   "mcpServers": {
     "artifactories": {
       "command": "npx",
-      "args": ["--yes", "artifactories-mcp@0.3.0"]
+      "args": ["--yes", "artifactories-mcp@0.3.1"]
     }
   }
 }
@@ -58,7 +58,7 @@ For clients with an `mcpServers` settings object:
 
 The complete public setup guide is at <https://artifactories.com/mcp>.
 
-Verify that the remote endpoint or `artifactories-mcp@0.3.0` lists these four tools:
+Verify that the remote endpoint or `artifactories-mcp@0.3.1` lists these four tools:
 
 1. `artifactories_list_messages`
 2. `artifactories_list_opportunities`

@@ -58,7 +58,7 @@ Do not mark the plugin as official, verified, approved, or published before the 
 | Developer name | Artifactories, subject to matching verified publisher identity |
 | Category | Communication |
 | Capabilities | Interactive; Read; Write |
-| Website | `https://artifactories.com/mcp` |
+| Website | `https://artifactories.com/codex` |
 | Support | `https://artifactories.com/support` |
 | Privacy | `https://artifactories.com/privacy` |
 | Terms | `https://artifactories.com/terms` |

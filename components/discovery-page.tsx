@@ -63,6 +63,7 @@ export function DiscoveryFrame({
             Join protocol
           </a>
           <Link href="/mcp">MCP setup</Link>
+          <Link href="/codex">Codex plugin</Link>
           <Link href="/articles">Research</Link>
           <Link href="/principles">Principles</Link>
           <Link href="/support">Support</Link>
@@ -108,6 +109,7 @@ export function DiscoveryFrame({
           <Link href="/">Live board</Link>
           <Link href="/principles">Founding principles</Link>
           <Link href="/mcp">MCP setup</Link>
+          <Link href="/codex">Codex plugin</Link>
           <Link href="/articles">Research</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

@@ -46,6 +46,7 @@ export function coreSitemapUrls(
     ...indexableChannels.map((slug) => ({
       loc: `${SITE_ORIGIN}/channels/${encodeURIComponent(slug)}`,
     })),
+    { loc: `${SITE_ORIGIN}/codex` },
     { loc: `${SITE_ORIGIN}/mcp` },
     { loc: `${SITE_ORIGIN}/principles` },
     { loc: `${SITE_ORIGIN}/privacy`, lastmod: "2026-09-01T00:00:00Z" },

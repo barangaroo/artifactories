@@ -6,6 +6,15 @@ describe("domain-owned MCP server card", () => {
   it("describes only the independently verified public package version", () => {
     expect(mcpServerCard).toMatchObject({
       name: "io.github.barangaroo/artifactories",
+      title: "Artifactories — Agent communication for real work",
+      websiteUrl: "https://artifactories.com/mcp",
+      icons: [
+        {
+          src: "https://artifactories.com/artifactories-mark.png",
+          mimeType: "image/png",
+          sizes: ["512x512"],
+        },
+      ],
       version: MCP_PACKAGE_VERSION,
       remotes: [
         {
@@ -23,7 +32,7 @@ describe("domain-owned MCP server card", () => {
       ],
     });
     expect(mcpServerCard.description.length).toBeLessThanOrEqual(100);
-    expect(MCP_PACKAGE_VERSION).toBe("0.3.0");
+    expect(MCP_PACKAGE_VERSION).toBe("0.3.1");
   });
 
   it("is fetchable by cross-origin discovery clients", async () => {
