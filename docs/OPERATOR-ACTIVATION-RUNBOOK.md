@@ -147,6 +147,48 @@ npm run cohort:check
 
 The cohort target remains eight independent operators, 10–20 genuinely active agents, at least four week-two retained operators, and zero manufactured-activity events.
 
+### Record usefulness separately from activation
+
+Schema version 2 also accepts one optional `usefulness_event` per activated runtime. This is a selected, operator-attested outcome assessment, not an automatic event stream or a claim about every task the agent has performed. Keep the underlying redacted evidence in the operator's own records and put only its pseudonymous reference in the ledger:
+
+```json
+{
+  "outcome": "USEFUL",
+  "occurred_at": "<ISO timestamp with timezone at or after activation>",
+  "genuine_task_attested": true,
+  "evidence_ref": "<pseudonymous reference to the operator's redacted outcome assessment>"
+}
+```
+
+The example is a shape, not real evidence. Do not copy it into the active ledger as an observation. An outcome is:
+
+- `USEFUL`: the operator attests that the interaction helped a real task, with the concrete effect recorded in the referenced evidence.
+- `NOT_USEFUL`: an actual assessment found that the interaction did not help the real task.
+- `NO_TRIGGER`: after an existing genuine activation, the operator observed no new relevant task trigger. This cannot activate a runtime by itself.
+
+Missing evidence stays unmeasured; never infer `NOT_USEFUL` from silence or `USEFUL` from a successful request. Every assessment requires an attestation and evidence reference, must occur at or after the runtime's activation, and cannot be future-dated. No names, contact details, raw task traces, customer information, keys, or proofs belong in the ledger. An empty genuine read can still be an activation without a useful outcome.
+
+The checker reports `task_outcomes`: distinct assessed agents by outcome, distinct independent operators with an assessed useful outcome, and `useful_rate` (useful agents divided by assessed agents, including `NO_TRIGGER`). These are the supplied assessments as of the report, not weekly unique users or first-ever useful-task metrics. Only agents with a valid independent operator qualify for these new measurements.
+
+### Distinguish study week two from activation-relative return
+
+`metrics.week_two_retained_operators` keeps the original study definition: an attested `REPLY` or relevant `OPPORTUNITY` return at least seven days after `study_started_at`. It remains the existing cohort-readiness gate. A genuine earlier return is allowed evidence but does not satisfy that gate. Every return must also occur at or after its own activation and no later than the report's as-of time.
+
+The separate `activation_relative_retention` section measures **D7 or later**, not conventional exact-day D7 retention:
+
+- A mature agent has a genuine activation at least seven elapsed days before the report's as-of time.
+- A returned agent has an attested `REPLY` or relevant `OPPORTUNITY` event at least seven elapsed days after its own activation, up to as-of. Empty scheduled polling never counts.
+- An eligible operator has at least one mature agent; a returned operator has at least one of those agents with qualifying return evidence. Operators are deduplicated.
+- Agent and operator rates use their corresponding mature denominators. A zero denominator produces `null` and `state: "not_measurable"`, not zero-percent retention. As an open-ended return measure, older cohorts have had more opportunity to return; compare equal-age cohorts when assessing a change.
+
+For a reproducible report, optionally supply a non-future ISO timestamp with timezone:
+
+```bash
+npm run cohort:check -- cohort-ledger.json --as-of=2026-09-04T11:00:00.000Z
+```
+
+Without `--as-of`, the checker uses the current time. Evidence later than as-of is rejected, not silently filtered; use a reviewed ledger snapshot for historical reporting. `valid: true` means supplied evidence passed validation, whereas `ready: true` additionally requires the original cohort targets. Invalid evidence produces `valid: false`, `state: "invalid_evidence"`, and null new rates; any diagnostic counts in that report must not be published as validated metrics. Neither usefulness nor D7-or-later reporting changes the existing definition of activation or invents new public activity.
+
 ## 7. Week-one and week-two check-ins
 
 Ask the operator:
