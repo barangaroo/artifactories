@@ -5,12 +5,14 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/mcp-telemetry", () => ({ recordMcpEvent: vi.fn() }));
 
 import {
   allowedMcpHostnames,
   handleMcpRequest,
 } from "@/app/mcp/http/route";
 import { MCP_TOOL_NAMES } from "@/lib/site";
+import { recordMcpEvent } from "@/lib/mcp-telemetry";
 
 const originalArchiveOnly = process.env.ARCHIVE_ONLY;
 const originalDatabaseUrl = process.env.DATABASE_URL;
@@ -38,6 +40,7 @@ describe("remote read-only MCP", () => {
   let client: Client | undefined;
 
   beforeEach(() => {
+    vi.mocked(recordMcpEvent).mockClear();
     process.env.ARCHIVE_ONLY = "true";
     delete process.env.DATABASE_URL;
   });
@@ -123,6 +126,13 @@ describe("remote read-only MCP", () => {
         reasons: [],
       },
     });
+    expect(vi.mocked(recordMcpEvent).mock.calls).toEqual(expect.arrayContaining([
+      ["tool_list_messages_empty", expect.any(String)],
+      ["tool_list_opportunities_empty", expect.any(String)],
+      ["tool_poll_notifications_empty", expect.any(String)],
+      ["tool_get_return_briefing_no_return", expect.any(String)],
+    ]));
+    expect(recordMcpEvent).toHaveBeenCalledWith("http_discover_accepted");
   });
 
   it("rejects untrusted Host and browser Origin values", async () => {
@@ -157,6 +167,7 @@ describe("remote read-only MCP", () => {
       { method: "GET", headers: { host: "artifactories.com" } },
     ));
     expect(response.status).toBe(405);
+    expect(recordMcpEvent).toHaveBeenCalledWith("http_method_rejected");
   });
 
   it("negotiates a legacy initialize request without retaining a session", async () => {
@@ -194,6 +205,30 @@ describe("remote read-only MCP", () => {
       },
     });
     expect(response.headers.get("mcp-session-id")).toBeNull();
+    expect(recordMcpEvent).toHaveBeenCalledWith("http_initialize_accepted");
+  });
+
+  it("counts tool errors even when HTTP transport returns a successful response", async () => {
+    client = new Client({ name: "private-client-name", version: "private-version" });
+    await client.connect(new StreamableHTTPClientTransport(
+      new URL("https://artifactories.com/mcp/http"), { fetch: routeFetch },
+    ));
+    process.env.ARCHIVE_ONLY = "false";
+    const result = await client.callTool({ name: "artifactories_list_messages", arguments: {} });
+    expect(result.isError).toBe(true);
+    expect(recordMcpEvent).toHaveBeenCalledWith("tool_list_messages_error", expect.any(String));
+    expect(JSON.stringify(vi.mocked(recordMcpEvent).mock.calls)).not.toContain("private");
+  });
+
+  it("classifies malformed JSON without sending its content to telemetry", async () => {
+    const response = await handleMcpRequest(new Request("https://artifactories.com/mcp/http", {
+      method: "POST",
+      headers: { host: "artifactories.com", "content-type": "application/json" },
+      body: '{"private_prompt":"secret",',
+    }));
+    expect(response.status).toBe(400);
+    expect(recordMcpEvent).toHaveBeenCalledWith("jsonrpc_parse_error");
+    expect(JSON.stringify(vi.mocked(recordMcpEvent).mock.calls)).not.toContain("secret");
   });
 
   it("bounds JSON request bodies and returns protocol-shaped errors", async () => {
@@ -217,5 +252,17 @@ describe("remote read-only MCP", () => {
       error: { code: -32600 },
       id: null,
     });
+    expect(recordMcpEvent).toHaveBeenCalledWith("jsonrpc_invalid_request");
+  });
+
+  it("keeps SDK-rejected protocol requests coarse without inspecting their response stream", async () => {
+    const response = await handleMcpRequest(new Request("https://artifactories.com/mcp/http", {
+      method: "POST",
+      headers: { host: "artifactories.com", "content-type": "application/json" },
+      body: JSON.stringify({ private_prompt: "PRIVATE", method: "PRIVATE_METHOD" }),
+    }));
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(recordMcpEvent).toHaveBeenCalledWith("http_sdk_rejected_code_unavailable");
+    expect(JSON.stringify(vi.mocked(recordMcpEvent).mock.calls)).not.toContain("PRIVATE");
   });
 });

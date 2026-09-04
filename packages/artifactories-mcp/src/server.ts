@@ -114,7 +114,16 @@ export interface ArtifactoriesReadAdapter {
 
 export interface CreateArtifactoriesServerOptions extends ArtifactoriesApiOptions {
   api?: ArtifactoriesReadAdapter;
+  /** Optional operational observer; never receives arguments or returned content. */
+  onToolOutcome?: (event: ToolOutcome) => void;
 }
+
+export type ToolOutcome = {
+  tool: (typeof TOOL_NAMES)[keyof typeof TOOL_NAMES];
+  outcome: "empty" | "nonempty" | "no_return" | "has_return" | "error";
+  /** Adapter work and briefing calculation only; excludes validation and wire serialization. */
+  durationBucket: "lt100" | "100to999" | "gte1000";
+};
 
 function successResult<T extends Record<string, unknown>>(output: T) {
   return {
@@ -137,6 +146,26 @@ export function createArtifactoriesServer(
   options: CreateArtifactoriesServerOptions = {},
 ): McpServer {
   const api = options.api ?? new ArtifactoriesApi(options);
+  function observe(tool: ToolOutcome["tool"], outcome: ToolOutcome["outcome"], startedAt: number, endedAt = performance.now()) {
+    if (!options.onToolOutcome) return;
+    const elapsed = endedAt - startedAt;
+    try {
+      options.onToolOutcome({
+        tool, outcome,
+        durationBucket: elapsed < 100 ? "lt100" : elapsed < 1000 ? "100to999" : "gte1000",
+      });
+    } catch {
+      // Observability is not part of the tool's authority or success contract.
+    }
+  }
+  function observedSuccess<T extends Record<string, unknown>>(
+    tool: ToolOutcome["tool"], outcome: ToolOutcome["outcome"], startedAt: number, output: T,
+  ) {
+    const endedAt = performance.now();
+    const result = successResult(output);
+    observe(tool, outcome, startedAt, endedAt);
+    return result;
+  }
   const server = new McpServer(
     { name: SERVER_NAME, version: SERVER_VERSION },
     {
@@ -162,9 +191,12 @@ export function createArtifactoriesServer(
       },
     },
     async ({ channel, limit, before }) => {
+      const startedAt = performance.now();
       try {
-        return successResult(await api.listMessages({ channel, limit, before }));
+        const result = await api.listMessages({ channel, limit, before });
+        return observedSuccess(TOOL_NAMES.listMessages, result.data.length ? "nonempty" : "empty", startedAt, result);
       } catch (error) {
+        observe(TOOL_NAMES.listMessages, "error", startedAt);
         return errorResult(error);
       }
     },
@@ -186,9 +218,12 @@ export function createArtifactoriesServer(
       },
     },
     async ({ limit, before }) => {
+      const startedAt = performance.now();
       try {
-        return successResult(await api.listOpportunities({ limit, before }));
+        const result = await api.listOpportunities({ limit, before });
+        return observedSuccess(TOOL_NAMES.listOpportunities, result.data.length ? "nonempty" : "empty", startedAt, result);
       } catch (error) {
+        observe(TOOL_NAMES.listOpportunities, "error", startedAt);
         return errorResult(error);
       }
     },
@@ -210,11 +245,12 @@ export function createArtifactoriesServer(
       },
     },
     async ({ agent_id, limit, after }) => {
+      const startedAt = performance.now();
       try {
-        return successResult(
-          await api.pollNotifications({ agentId: agent_id, limit, after }),
-        );
+        const result = await api.pollNotifications({ agentId: agent_id, limit, after });
+        return observedSuccess(TOOL_NAMES.pollNotifications, result.data.length ? "nonempty" : "empty", startedAt, result);
       } catch (error) {
+        observe(TOOL_NAMES.pollNotifications, "error", startedAt);
         return errorResult(error);
       }
     },
@@ -236,6 +272,7 @@ export function createArtifactoriesServer(
       },
     },
     async ({ agent_id, after, opportunities_before, seen_opportunity_ids, limit }) => {
+      const startedAt = performance.now();
       try {
         const [opportunities, notifications] = await Promise.all([
           api.listOpportunities({ limit, before: opportunities_before }),
@@ -251,7 +288,7 @@ export function createArtifactoriesServer(
         if (notifications?.data.length) reasons.push("REPLY_RECEIVED");
         if (openQuestions.length) reasons.push("UNSEEN_OPEN_QUESTION");
 
-        return successResult({
+        return observedSuccess(TOOL_NAMES.getReturnBriefing, reasons.length ? "has_return" : "no_return", startedAt, {
           data: {
             replies: notifications?.data ?? [],
             openQuestions,
@@ -273,6 +310,7 @@ export function createArtifactoriesServer(
           },
         });
       } catch (error) {
+        observe(TOOL_NAMES.getReturnBriefing, "error", startedAt);
         return errorResult(error);
       }
     },
