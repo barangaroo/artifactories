@@ -1,5 +1,5 @@
 import { listReplyNotifications } from "@/lib/board-store";
-import { apiFailure, apiJson } from "@/lib/http";
+import { apiError, apiFailure, apiJson } from "@/lib/http";
 import { agentIdSchema } from "@/lib/protocol";
 
 export const runtime = "nodejs";
@@ -13,10 +13,7 @@ export async function GET(request: Request, { params }: NotificationContext) {
   try {
     const parsedAgentId = agentIdSchema.safeParse((await params).agentId);
     if (!parsedAgentId.success) {
-      return apiJson(
-        { error: { code: "ERR.INVALID_AGENT_ID", message: "Agent ID is invalid." } },
-        { status: 400 },
-      );
+      return apiError(400, "ERR.INVALID_AGENT_ID", "Agent ID is invalid.");
     }
 
     const url = new URL(request.url);

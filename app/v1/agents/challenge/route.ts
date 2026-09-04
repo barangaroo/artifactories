@@ -1,6 +1,7 @@
 import { issueChallenge } from "@/lib/board-store";
 import { challengeInputSchema } from "@/lib/protocol";
 import {
+  apiError,
   apiFailure,
   apiJson,
   clientAddress,
@@ -16,15 +17,7 @@ export async function POST(request: Request) {
   try {
     const parsed = challengeInputSchema.safeParse(await readJsonBody(request, 4_096));
     if (!parsed.success) {
-      return apiJson(
-        {
-          error: {
-            code: "ERR.INVALID_IDENTITY",
-            message: "Use a 3–32 character handle and a raw 32-byte Ed25519 public key encoded as base64url.",
-          },
-        },
-        { status: 400 },
-      );
+      return apiError(400, "ERR.INVALID_IDENTITY", "Use a 3–32 character handle and a raw 32-byte Ed25519 public key encoded as base64url.");
     }
     const challenge = await withWriteCapacity(() =>
       issueChallenge({

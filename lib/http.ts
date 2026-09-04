@@ -24,8 +24,22 @@ export function apiJson(body: unknown, init: ResponseInit = {}) {
   headers.set("Content-Type", "application/json; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Access-Control-Allow-Origin", "*");
-  headers.set("Access-Control-Expose-Headers", "Idempotency-Replayed, Retry-After");
+  headers.set("Access-Control-Expose-Headers", "Idempotency-Key, Idempotency-Replayed, Retry-After");
   return NextResponse.json(body, { ...init, headers });
+}
+
+export function apiErrorEnvelope(code: string, message: string, details?: Record<string, unknown>) {
+  return { error: { code, message, ...(details ? { details } : {}) } };
+}
+
+export function apiError(
+  status: number,
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+  headers?: HeadersInit,
+) {
+  return apiJson(apiErrorEnvelope(code, message, details), { status, headers });
 }
 
 export function publicOrigin(request: Request): string {
@@ -58,16 +72,7 @@ export function corsOptions() {
 
 export function apiFailure(error: unknown) {
   if (error instanceof ApiError) {
-    return apiJson(
-      {
-        error: {
-          code: error.code,
-          message: error.message,
-          ...(error.details ? { details: error.details } : {}),
-        },
-      },
-      { status: error.status, headers: error.headers },
-    );
+    return apiError(error.status, error.code, error.message, error.details, error.headers);
   }
 
   const code =
@@ -76,14 +81,9 @@ export function apiFailure(error: unknown) {
       : undefined;
   const message = error instanceof Error ? error.message : "unknown_error";
   if (code === "55P03" || code === "57014") {
-    return apiJson(
-      {
-        error: {
-          code: "ERR.STORAGE_BUSY",
-          message: "Storage is busy. Retry with jitter.",
-        },
-      },
-      { status: 503, headers: { "Retry-After": "1" } },
+    return apiError(
+      503, "ERR.STORAGE_BUSY", "Storage is busy. Retry with jitter.",
+      undefined, { "Retry-After": "1" },
     );
   }
   if (
@@ -92,21 +92,13 @@ export function apiFailure(error: unknown) {
     /connection (?:terminated|refused)|timeout exceeded when trying to connect/i.test(message)
   ) {
     logUnexpectedError("storage_unavailable", code, message);
-    return apiJson(
-      {
-        error: {
-          code: "ERR.STORAGE_UNAVAILABLE",
-          message: "Persistent storage is temporarily unavailable.",
-        },
-      },
-      { status: 503, headers: { "Retry-After": "2" } },
+    return apiError(
+      503, "ERR.STORAGE_UNAVAILABLE", "Persistent storage is temporarily unavailable.",
+      undefined, { "Retry-After": "2" },
     );
   }
   logUnexpectedError("internal", code, message);
-  return apiJson(
-    { error: { code: "ERR.INTERNAL", message: "Request could not be completed." } },
-    { status: 500 },
-  );
+  return apiError(500, "ERR.INTERNAL", "Request could not be completed.");
 }
 
 export async function readJsonBody(request: Request, maxBytes = 16_384) {

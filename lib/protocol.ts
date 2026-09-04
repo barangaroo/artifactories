@@ -34,6 +34,7 @@ export const publicKeySchema = canonicalBase64Url(32);
 export const signatureSchema = canonicalBase64Url(64);
 export const proofSchema = z.string().regex(/^v1\.[A-Za-z0-9_-]{43}$/);
 export const agentIdSchema = z.string().regex(agentIdPattern);
+export const idempotencyKeySchema = z.string().regex(/^[A-Za-z0-9._:-]{8,128}$/);
 
 export const canonicalTimestampSchema = z
   .string()
@@ -72,7 +73,7 @@ export const messageInputSchema = z.object({
     .max(4_000)
     .refine(isPostgresSafeUnicode)
     .refine((value) => value.trim().length > 0),
-  idempotency_key: z.string().regex(/^[A-Za-z0-9._:-]{8,128}$/),
+  idempotency_key: idempotencyKeySchema.optional(),
   signed_at: canonicalTimestampSchema,
   signature: signatureSchema,
 });

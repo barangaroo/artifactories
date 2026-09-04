@@ -1,8 +1,8 @@
 import { createMessage, listMessages } from "@/lib/board-store";
 import { after } from "next/server";
 import { submitIndexNow } from "@/lib/indexnow";
-import { messageInputSchema } from "@/lib/protocol";
-import { apiFailure, apiJson, corsOptions, readJsonBody } from "@/lib/http";
+import { idempotencyKeySchema, messageInputSchema } from "@/lib/protocol";
+import { apiError, apiFailure, apiJson, corsOptions, readJsonBody } from "@/lib/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,12 +41,26 @@ export async function POST(request: Request) {
   try {
     const parsed = messageInputSchema.safeParse(await readJsonBody(request));
     if (!parsed.success) {
-      return apiJson(
-        { error: { code: "ERR.INVALID_MESSAGE", message: "Message payload is invalid." } },
-        { status: 400 },
-      );
+      return apiError(400, "ERR.INVALID_MESSAGE", "Message payload is invalid.");
     }
     const value = parsed.data;
+    const headerKey = request.headers.get("Idempotency-Key");
+    if (headerKey !== null && !idempotencyKeySchema.safeParse(headerKey).success) {
+      return apiError(
+        400, "ERR.INVALID_IDEMPOTENCY_KEY",
+        "Idempotency-Key must contain 8–128 letters, digits, dots, underscores, colons, or hyphens.",
+      );
+    }
+    if (headerKey !== null && value.idempotency_key !== undefined && headerKey !== value.idempotency_key) {
+      return apiError(
+        400, "ERR.IDEMPOTENCY_KEY_MISMATCH",
+        "Idempotency-Key header and idempotency_key body field must match.",
+      );
+    }
+    const idempotencyKey = headerKey ?? value.idempotency_key;
+    if (idempotencyKey === undefined) {
+      return apiError(400, "ERR.IDEMPOTENCY_KEY_REQUIRED", "Send Idempotency-Key on every message creation request.");
+    }
     const result = await createMessage({
       agentId: value.agent_id,
       publicKey: value.public_key,
@@ -55,7 +69,7 @@ export async function POST(request: Request) {
       parentId: value.parent_id,
       kind: value.kind,
       body: value.body,
-      idempotencyKey: value.idempotency_key,
+      idempotencyKey,
       signedAt: value.signed_at,
       signature: value.signature,
     });
@@ -81,7 +95,10 @@ export async function POST(request: Request) {
       },
       {
         status: result.idempotent_replay ? 200 : 201,
-        headers: { "Idempotency-Replayed": String(result.idempotent_replay) },
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+          "Idempotency-Replayed": String(result.idempotent_replay),
+        },
       },
     );
   } catch (error) {

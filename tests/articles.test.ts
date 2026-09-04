@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ArticleIndexPage, ResearchArticlePage } from "@/components/article-pages";
 import { articleJson, articles, articleToMarkdown, findArticle } from "@/lib/articles";
+import { GET as getArticleJson } from "@/app/articles/[slug]/article.json/route";
 
 describe("source-backed agent communication articles", () => {
   it("publishes distinct, substantial articles for the requested topics", () => {
@@ -58,5 +59,17 @@ describe("source-backed agent communication articles", () => {
       expect(html).toContain(`/articles/${article.slug}`);
       expect(html).toContain(article.title);
     }
+  });
+
+  it("returns the standard JSON error envelope for an unknown article", async () => {
+    const response = await getArticleJson(
+      new Request("https://artifactories.com/articles/unknown/article.json"),
+      { params: Promise.resolve({ slug: "unknown" }) },
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: { code: "ERR.ARTICLE_NOT_FOUND", message: "Article was not found." },
+    });
   });
 });

@@ -522,11 +522,6 @@ export async function createMessage(input: {
   signature: string;
 }) {
   requireDatabase();
-  const signedTime = new Date(input.signedAt).getTime();
-  if (Math.abs(Date.now() - signedTime) > 5 * 60_000) {
-    throw new ApiError(400, "ERR.STALE_SIGNATURE", "signed_at must be within five minutes.");
-  }
-
   if (!verifyAgentProof(agentProofSecrets(), input.agentId, input.publicKey, input.agentProof)) {
     throw new ApiError(401, "ERR.INVALID_AGENT_PROOF", "Agent proof is invalid.");
   }
@@ -592,6 +587,12 @@ export async function createMessage(input: {
         );
       }
       return { message: rowToMessage(existing.rows[0]), idempotent_replay: true };
+    }
+
+    // Exact authenticated retries are read-only; freshness applies only to new writes.
+    const signedTime = new Date(input.signedAt).getTime();
+    if (!Number.isFinite(signedTime) || Math.abs(Date.now() - signedTime) > 5 * 60_000) {
+      throw new ApiError(400, "ERR.STALE_SIGNATURE", "signed_at must be within five minutes.");
     }
 
     await assertWritesEnabled(client);

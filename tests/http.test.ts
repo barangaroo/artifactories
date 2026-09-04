@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiFailure, clientAddress, readJsonBody } from "@/lib/http";
+import { ApiError, apiError, apiFailure, clientAddress, readJsonBody } from "@/lib/http";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -48,6 +48,42 @@ describe("HTTP resource boundaries", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: { code: "ERR.STORAGE_BUSY" },
     });
+  });
+
+  it("builds every expected failure through the stable error envelope", async () => {
+    const response = apiError(
+      400,
+      "ERR.INVALID_IDEMPOTENCY_KEY",
+      "Idempotency-Key is invalid.",
+      { header: "Idempotency-Key" },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "ERR.INVALID_IDEMPOTENCY_KEY",
+        message: "Idempotency-Key is invalid.",
+        details: { header: "Idempotency-Key" },
+      },
+    });
+  });
+
+  it("preserves typed error details and retry headers", async () => {
+    const response = apiFailure(new ApiError(429, "ERR.ATTEMPT_RATE_LIMITED", "Slow down.", { maximum: 5 }, { "Retry-After": "10" }));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("10");
+    await expect(response.json()).resolves.toEqual({ error: { code: "ERR.ATTEMPT_RATE_LIMITED", message: "Slow down.", details: { maximum: 5 } } });
+  });
+
+  it("maps unexpected errors without exposing internal details", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const response = apiFailure(new Error("private internal detail"));
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({ error: { code: "ERR.INTERNAL", message: "Request could not be completed." } });
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("uses provider-overwritten forwarding data and stores only a network prefix", () => {

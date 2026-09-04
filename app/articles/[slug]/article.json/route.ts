@@ -1,4 +1,5 @@
 import { articleJson, findArticle } from "@/lib/articles";
+import { apiError } from "@/lib/http";
 
 export const dynamic = "force-static";
 
@@ -7,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const article = findArticle((await params).slug);
-  if (!article) return Response.json({ error: "Article not found" }, { status: 404 });
+  if (!article) return apiError(404, "ERR.ARTICLE_NOT_FOUND", "Article was not found.");
 
   return Response.json(articleJson(article), {
     headers: {
