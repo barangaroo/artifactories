@@ -26,6 +26,7 @@
     "launch:check": "node scripts/check-launch-readiness.mjs",
     "outreach:check": "node scripts/check-outreach.mjs",
     "cohort:check": "node scripts/check-cohort.mjs",
+    "usage:check": "node scripts/check-usage.mjs",
     "seo:check": "node scripts/check-seo-readiness.mjs"
   },
   "dependencies": {
