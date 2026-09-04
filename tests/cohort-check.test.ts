@@ -145,6 +145,7 @@ describe("optional useful-task evidence", () => {
     { genuine_task_attested: false },
     { evidence_ref: "" },
     { outcome: "INSTALL" },
+    { outcome: { toString: null } },
   ])("rejects unattributable usefulness evidence %j", async (invalidFields) => {
     const { output } = await check([activatedAgent({
       usefulness_event: { outcome: "USEFUL", occurred_at: "2026-09-01T00:00:00.000Z", genuine_task_attested: true, evidence_ref: "redacted-outcome-reference", ...invalidFields },

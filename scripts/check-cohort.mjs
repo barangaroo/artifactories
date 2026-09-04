@@ -142,6 +142,7 @@ for (const [operatorIndex, operator] of operators.entries()) {
     if (agent.usefulness_event != null) {
       const event = agent.usefulness_event;
       const validOutcome =
+        typeof event.outcome === "string" &&
         Object.hasOwn(outcomeAgents, event.outcome) &&
         validTimestamp(event.occurred_at) &&
         Date.parse(event.occurred_at) >= activatedAt &&
