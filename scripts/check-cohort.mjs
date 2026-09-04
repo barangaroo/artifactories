@@ -62,9 +62,14 @@ function nonEmpty(value) {
 }
 
 function validTimestamp(value) {
-  return nonEmpty(value) &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
-    !Number.isNaN(Date.parse(value));
+  if (!nonEmpty(value) ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) ||
+      Number.isNaN(Date.parse(value))) return false;
+
+  // Date.parse normalizes impossible dates such as February 30. Check the
+  // written calendar date separately so a valid offset crossing midnight stays valid.
+  const calendarDate = value.slice(0, 10);
+  return new Date(`${calendarDate}T00:00:00.000Z`).toISOString().slice(0, 10) === calendarDate;
 }
 
 function genuineEvent(event, allowedTypes) {
@@ -102,10 +107,10 @@ for (const [operatorIndex, operator] of operators.entries()) {
   let operatorReturned = false;
 
   for (const [agentIndex, agent] of agents.entries()) {
-    const registeredAgentId = /^agt_[A-Za-z0-9_-]{16}$/.test(agent?.agent_id ?? "")
+    const registeredAgentId = typeof agent?.agent_id === "string" && /^agt_[A-Za-z0-9_-]{16}$/.test(agent.agent_id)
       ? agent.agent_id
       : undefined;
-    const readOnlyAgentRef = /^ref_[A-Za-z0-9_-]{16,64}$/.test(agent?.agent_ref ?? "")
+    const readOnlyAgentRef = typeof agent?.agent_ref === "string" && /^ref_[A-Za-z0-9_-]{16,64}$/.test(agent.agent_ref)
       ? agent.agent_ref
       : undefined;
     const agentIdentity = registeredAgentId ?? readOnlyAgentRef;
@@ -117,10 +122,13 @@ for (const [operatorIndex, operator] of operators.entries()) {
     const identityMatchesAuthority = readOnly
       ? agentIdentity !== undefined
       : registeredAgentId !== undefined;
-    const suppliedAgentIdIsValid = !nonEmpty(agent?.agent_id) || registeredAgentId !== undefined;
+    const suppliedAgentIdIsValid = agent?.agent_id == null ||
+      (typeof agent.agent_id === "string" && (!nonEmpty(agent.agent_id) || registeredAgentId !== undefined));
+    const suppliedAgentRefIsValid = agent?.agent_ref == null || typeof agent.agent_ref === "string";
     const validAgent =
       identityMatchesAuthority &&
       suppliedAgentIdIsValid &&
+      suppliedAgentRefIsValid &&
       nonEmpty(agent?.workflow) &&
       ["READ_ONLY", "PER_POST", "BOUNDED_STANDING"].includes(agent?.posting_authority) &&
       genuineEvent(agent?.activation_event, activationTypes);

@@ -237,6 +237,41 @@ describe("activation-relative return measurement", () => {
 });
 
 describe("invalid ledger input", () => {
+  it.each([
+    { agent_id: { toString: null } },
+    { agent_ref: { toString: null } },
+    { agent_id: "agt_abcdefghijklmnop", agent_ref: { toString: null } },
+  ])("reports malformed identity objects as invalid evidence without crashing: %j", async (invalidIdentity) => {
+    const { result, output } = await check([activatedAgent(invalidIdentity)]);
+    expect(result.status).toBe(1);
+    expect(output.valid).toBe(false);
+    expect(output.metrics.genuinely_active_agents).toBe(0);
+    expect(output.errors.join(" ")).toContain("missing stable identity");
+  });
+
+  it.each(["2026-02-30T00:00:00.000Z", "2026-02-29T00:00:00+08:00", "2026-04-31T23:00:00-02:00"])("rejects impossible calendar dates instead of normalizing them: %s", async (occurred_at) => {
+    const { output } = await check([activatedAgent({
+      activation_event: { type: "READ", occurred_at, genuine_task_attested: true, evidence_ref: "activation-reference" },
+    })]);
+    expect(output.valid).toBe(false);
+    expect(output.metrics.genuinely_active_agents).toBe(0);
+  });
+
+  it.each(["2024-02-29T23:30:00.000Z", "2024-02-29T23:30:00-02:00", "2026-03-01T00:30:00+08:00"])("preserves legitimate leap days and offset calendar dates: %s", async (occurred_at) => {
+    const { output } = await check([activatedAgent({
+      activation_event: { type: "READ", occurred_at, genuine_task_attested: true, evidence_ref: "activation-reference" },
+    })]);
+    expect(output.valid).toBe(true);
+    expect(output.metrics.genuinely_active_agents).toBe(1);
+  });
+
+  it("rejects an impossible calendar date in the as-of argument", async () => {
+    const { result, output } = await check([], { asOf: "2026-02-30T00:00:00Z" });
+    expect(result.status).toBe(1);
+    expect(output.valid).toBe(false);
+    expect(output.error).toContain("--as-of");
+  });
+
   it.each([[null], [[]], ["not a ledger"]])("reports an invalid root as a structured failure: %j", async (rawLedger) => {
     const { result, output } = await check([], { rawLedger });
     expect(result.status).toBe(1);
