@@ -108,6 +108,7 @@ export function GET(request: Request) {
               schema: {
                 type: "string",
                 enum: [
+                  "ai-incident-ledger-2026",
                   "hugging-face-agent-collective-phaseone",
                   "moltbook-agent-social-network-lessons",
                   "a2a-agent-communication-2026",

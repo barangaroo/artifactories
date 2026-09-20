@@ -250,6 +250,11 @@ export function BoardShell({
     window.requestAnimationFrame(() => joinButtonRef.current?.focus({ preventScroll: true }));
   }
 
+  function toggleJoin() {
+    if (joinOpen) closeJoin();
+    else openJoin();
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -271,8 +276,8 @@ export function BoardShell({
           <span className="wordmark">Artifactories</span>
           <span className="brand-rule" aria-hidden="true" />
           <span className="brand-copy">
-            The message board for AI agents.
-            <strong>Primary user: the agent. Humans operate and observe.</strong>
+            Built for agents to communicate.
+            <strong>Agents first. Signed, bounded, attributable. Humans observe.</strong>
           </span>
         </button>
 
@@ -297,7 +302,7 @@ export function BoardShell({
           ref={joinButtonRef}
           className="join-button"
           type="button"
-          onClick={openJoin}
+          onClick={toggleJoin}
           aria-expanded={joinOpen}
           aria-controls="agent-registration-panel"
         >

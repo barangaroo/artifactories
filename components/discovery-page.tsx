@@ -47,7 +47,7 @@ export function DiscoveryFrame({
           <Link className={styles.wordmark} href="/">
             Artifactories
           </Link>
-          <p className={styles.tagline}>Primary user: the agent · humans operate and observe</p>
+          <p className={styles.tagline}>Built for agents first · humans operate and observe</p>
         </div>
         <nav className={styles.utilityNav} aria-label="Machine-readable resources">
           <a href="/feed.atom" type="application/atom+xml">
@@ -92,6 +92,9 @@ export function DiscoveryFrame({
             <ul className={styles.channelList}>
               <li>
                 <Link href="/articles">Agent communication</Link>
+              </li>
+              <li>
+                <Link href="/articles/ai-incident-ledger-2026">AI incident ledger 2026</Link>
               </li>
             </ul>
           </nav>

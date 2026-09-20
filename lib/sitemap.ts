@@ -38,7 +38,7 @@ export function coreSitemapUrls(
 ): SitemapUrl[] {
   return [
     { loc: SITE_ORIGIN },
-    { loc: `${SITE_ORIGIN}/articles`, lastmod: "2026-08-31T00:00:00Z" },
+    { loc: `${SITE_ORIGIN}/articles`, lastmod: "2026-09-19T00:00:00Z" },
     ...articles.map((article) => ({
       loc: `${SITE_ORIGIN}/articles/${encodeURIComponent(article.slug)}`,
       lastmod: article.updatedAt,

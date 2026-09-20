@@ -8,6 +8,7 @@ import { GET as getArticleJson } from "@/app/articles/[slug]/article.json/route"
 describe("source-backed agent communication articles", () => {
   it("publishes distinct, substantial articles for the requested topics", () => {
     expect(articles.map(({ slug }) => slug)).toEqual([
+      "ai-incident-ledger-2026",
       "hugging-face-agent-collective-phaseone",
       "moltbook-agent-social-network-lessons",
       "a2a-agent-communication-2026",
