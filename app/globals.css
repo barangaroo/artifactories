@@ -171,11 +171,13 @@ a {
 
 .brand-copy {
   display: flex;
+  min-width: 0;
+  overflow: hidden;
   color: var(--navy);
   flex-direction: column;
   font-size: 13px;
   line-height: 1.45;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .brand-copy strong {
@@ -603,6 +605,7 @@ a {
 .empty-state {
   display: grid;
   min-height: 360px;
+  padding: 24px;
   place-items: center;
   align-content: center;
   color: var(--muted);
@@ -617,6 +620,11 @@ a {
 
 .empty-state p {
   margin: 0;
+  line-height: 1.6;
+}
+
+.empty-state p + p {
+  margin-top: 12px;
 }
 
 .join-panel {
@@ -935,8 +943,10 @@ a {
   display: flex;
   min-height: 63px;
   align-items: center;
-  gap: 0;
-  padding: 0 27px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 8px 16px;
+  padding: 12px 27px;
   border-top: 1px solid var(--line);
   background: #fff;
   color: #43516a;
@@ -969,7 +979,7 @@ a {
 }
 
 .statusbar .archive-link {
-  margin-left: auto;
+  margin-left: 0;
   color: var(--blue);
   font-weight: 700;
   text-underline-offset: 3px;
@@ -1371,6 +1381,12 @@ a {
   border-top: 1px solid var(--line);
 }
 
+@media (max-width: 1500px) {
+  .brand-copy strong {
+    display: none;
+  }
+}
+
 @media (max-width: 1260px) {
   .topbar {
     grid-template-columns: minmax(330px, 1fr) minmax(250px, 340px) auto;
@@ -1585,7 +1601,7 @@ a {
   }
 
   .statusbar .archive-link {
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .messages-surface {

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const OPERATOR_LOGIN = "barangaroo";
@@ -86,7 +87,7 @@ function independentResponses(nodes = []) {
   });
 }
 
-export function buildOutreachReport(data, checkedAt = new Date()) {
+export function buildOutreachReport(data, checkedAt = new Date(), responseReviews = []) {
   const checkedDate = checkedAt.toISOString().slice(0, 10);
   const channels = CHANNELS.map((channel) => {
     const discussion = data[channel.key]?.discussion;
@@ -95,6 +96,17 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
     }
 
     const responses = independentResponses(discussion.comments?.nodes);
+    const reviewedResponses = responses.map((response) => {
+      const review = responseReviews.find(
+        (item) => item.url === response.url && item.author === response.author.login,
+      );
+      return {
+        url: response.url,
+        author: response.author.login,
+        classification: ["interested", "acknowledgment", "declined"].includes(review?.classification)
+          ? review.classification : "unreviewed",
+      };
+    });
     const followupDue =
       channel.followupAllowed && responses.length === 0 && checkedDate >= FOLLOWUP_AFTER;
 
@@ -104,6 +116,7 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
       status: responses.length > 0 ? "responded" : followupDue ? "followup_due" : "waiting",
       independentResponseCount: responses.length,
       independentResponders: responses.map(({ author }) => author.login),
+      responseReviews: reviewedResponses,
       followupAllowed: channel.followupAllowed,
       followupAfter: FOLLOWUP_AFTER,
       upvoteCountIgnored: discussion.upvoteCount ?? 0,
@@ -120,6 +133,7 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
     status: elizaReplies.length > 0 ? "responded" : "permission_hold",
     independentResponseCount: elizaReplies.length,
     independentResponders: elizaReplies.map(({ author }) => author.login),
+    responseReviews: [],
     followupAllowed: false,
     followupAfter: null,
     upvoteCountIgnored: 0,
@@ -149,10 +163,19 @@ export function buildOutreachReport(data, checkedAt = new Date()) {
         ({ independentResponseCount }) => independentResponseCount > 0,
       ).length,
       independentResponders: independentResponderCount,
+      confirmedInterestedOperators: new Set(
+        channels.flatMap((channel) => channel.responseReviews ?? [])
+          .filter((review) => review.classification === "interested")
+          .map((review) => review.author),
+      ).size,
+      unreviewedResponses: channels.flatMap((channel) => channel.responseReviews ?? [])
+        .filter((review) => review.classification === "unreviewed").length,
+      activations: null,
       followupsDue: channels.filter(({ status }) => status === "followup_due").length,
       permissionHolds: channels.filter(({ status }) => status === "permission_hold").length,
       fallbacksEligible: camelFallbackStatus === "eligible" ? 1 : 0,
     },
+    measurementNote: "Responses include moderation and acknowledgments. Interest requires a reviewed response; activation and usefulness require separate operator-attested cohort evidence. Fallback eligibility remains based on raw responses, not inferred adoption.",
     channels,
     fallbacks: [
       {
@@ -183,7 +206,8 @@ function fetchOutreachData() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    console.log(JSON.stringify(buildOutreachReport(fetchOutreachData()), null, 2));
+    const reviews = JSON.parse(readFileSync(new URL("../docs/outreach-response-reviews.json", import.meta.url), "utf8"));
+    console.log(JSON.stringify(buildOutreachReport(fetchOutreachData(), new Date(), reviews), null, 2));
   } catch (error) {
     console.error(
       JSON.stringify(

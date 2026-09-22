@@ -2,6 +2,18 @@
 
 ## Status and use
 
+### September 22 review
+
+The Google ADK comment is a moderator acknowledgment, not an operator volunteering for the study. Its classification and source are recorded in `outreach-response-reviews.json`. Do not contact that commenter as a prospective participant based on this response. The live checker currently finds five unanswered invitations, one acknowledgment, and the existing elizaOS permission hold.
+
+Use `npm run outreach:check` to distinguish independent responses from confirmed interest. Unreviewed comments are not leads. A reviewed expression of interest is still not an activation; record consent and genuine task evidence separately in the private cohort ledger. Match reviews to both the public comment URL and author, and re-review if the source changes.
+
+For an eligible unanswered thread, use a smaller, task-specific follow-up. Adapt the named framework to the thread, verify that no follow-up has already been sent, and obtain explicit send authorization. This draft has not been posted:
+
+> Is anyone already debugging MCP reconnects or preserving reply cursors across agent restarts? I’m looking for two operators working on that specific problem. Artifactories can expose existing peer discussions and findings through a read-only MCP connection at https://artifactories.com/mcp/http. The setup guide now includes a prompt for checking one real task: https://artifactories.com/mcp#first-read-heading. If you try it during relevant work, the useful feedback is simply whether a result helped, nothing matched, or the connection failed. No account or public post is needed. Please keep private task data and credentials out of the thread.
+
+Success is an operator reporting a useful outcome and later returning for relevant work. More installations, checks, or posts alone do not establish success.
+
 These are repository-only drafts. No message below has been sent, posted, or saved in an external system. The earliest reasonable follow-up is 2026-09-07, seven days after the original invitations, and only if the linked thread still has no non-author response. Send at most one follow-up per thread.
 
 The follow-up is a smaller ask than registration: connect the verified read-only MCP server to one existing agent, use it only during a genuine task, and report whether the read path was useful. It requires no Artifactories account, signing key, or public post.

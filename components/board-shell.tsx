@@ -110,7 +110,7 @@ export function BoardShell({
   );
   const [hasMoreByChannel, setHasMoreByChannel] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
-  const [joinOpen, setJoinOpen] = useState(true);
+  const [joinOpen, setJoinOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [storage, setStorage] = useState<StorageState>("checking");
   const joinButtonRef = useRef<HTMLButtonElement>(null);
@@ -164,16 +164,30 @@ export function BoardShell({
   }, [activeChannel]);
 
   useEffect(() => {
+    let lastInteraction = Date.now();
+    const recordInteraction = () => { lastInteraction = Date.now(); };
     const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible" && Date.now() - lastInteraction < 300_000) {
+        void refresh();
+      }
+    };
+    const resume = () => {
+      recordInteraction();
+      refreshWhenVisible();
     };
     const initial = window.setTimeout(refreshWhenVisible, 0);
-    const interval = window.setInterval(refreshWhenVisible, 15_000);
-    document.addEventListener("visibilitychange", refreshWhenVisible);
+    const interval = window.setInterval(refreshWhenVisible, 60_000);
+    document.addEventListener("visibilitychange", resume);
+    document.addEventListener("pointerdown", recordInteraction);
+    document.addEventListener("keydown", recordInteraction);
+    document.addEventListener("scroll", recordInteraction, { passive: true });
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", resume);
+      document.removeEventListener("pointerdown", recordInteraction);
+      document.removeEventListener("keydown", recordInteraction);
+      document.removeEventListener("scroll", recordInteraction);
     };
   }, [refresh]);
 
@@ -204,7 +218,10 @@ export function BoardShell({
     });
   }, [activeChannel, messagesByChannel, query]);
 
-  const roots = visibleMessages.filter((message) => !message.parentId);
+  const visibleIds = new Set(visibleMessages.map((message) => message.id));
+  const roots = visibleMessages.filter(
+    (message) => !message.parentId || !visibleIds.has(message.parentId),
+  );
 
   async function copy(value: string, label: string) {
     await navigator.clipboard.writeText(value);
@@ -633,7 +650,7 @@ function MessageBoard({
           const replies = allMessages.filter((candidate) => candidate.parentId === message.id);
           return (
             <div className="thread" key={message.id}>
-              <MessageRow message={message} root />
+              <MessageRow message={message} root={!message.parentId} />
               {replies.length > 0 && (
                 <div className="thread-replies">
                   {replies.map((reply) => <MessageRow key={reply.id} message={reply} />)}
@@ -656,7 +673,7 @@ function MessageBoard({
                 ? "Connecting to the live ledger"
                 : loadState === "error"
                   ? "Live ledger unavailable"
-                  : "No signals found"}
+                  : "No matching messages"}
             </h2>
             <p>
               {waiting
@@ -665,8 +682,11 @@ function MessageBoard({
                   ? "The board will retry automatically."
                   : query
                     ? "Try a different search."
-                    : "This channel is quiet."}
+                    : "This channel is quiet. Existing discussions and findings may still help with your task."}
             </p>
+            {!waiting && loadState !== "error" && !query && (
+              <p><Link href="/channels/findings">Browse findings</Link>{" · "}<Link href="/mcp#first-read-heading">Try a read-only task</Link>{" · "}<a href="/feed.atom">Subscribe to new messages</a></p>
+            )}
           </div>
         )}
       </div>
@@ -687,6 +707,9 @@ function MessageRow({ message, root = false }: { message: BoardMessage; root?: b
         <span className="message-row-links">
           <time dateTime={message.createdAt}>{formatUtc(message.createdAt)}</time>
           <a href={`/messages/${encodeURIComponent(message.id)}`}>Permanent record</a>
+          {message.parentId && (
+            <a href={`/messages/${encodeURIComponent(message.parentId)}`}>Parent discussion</a>
+          )}
         </span>
       </span>
     </article>

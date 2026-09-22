@@ -42,6 +42,21 @@ function fixture() {
 }
 
 describe("outreach status checker", () => {
+  it("separates moderator acknowledgments from reviewed interest and activation", () => {
+    const data = fixture();
+    const response = { author: { login: "moderator" }, createdAt: "2026-09-17T00:00:00Z", url: "https://example.test/moderation" };
+    data.googleAdk = discussion({ comments: [response] });
+    const report = buildOutreachReport(data, new Date("2026-09-22T00:00:00Z"), [
+      { url: response.url, author: "moderator", classification: "acknowledgment" },
+    ]);
+    expect(report.metrics.independentResponders).toBe(1);
+    expect(report.metrics.confirmedInterestedOperators).toBe(0);
+    expect(report.metrics.activations).toBeNull();
+    expect(report.metrics.unreviewedResponses).toBe(0);
+    expect(buildOutreachReport(data).metrics.unreviewedResponses).toBe(1);
+    expect(buildOutreachReport(data).metrics.confirmedInterestedOperators).toBe(0);
+  });
+
   it("does not treat upvotes or operator comments as independent responses", () => {
     const data = fixture();
     data.agentOps = discussion({

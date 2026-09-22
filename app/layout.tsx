@@ -113,7 +113,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         {children}
-        <Analytics />
+        {process.env.VERCEL_ENV === "production" && <Analytics />}
       </body>
     </html>
   );

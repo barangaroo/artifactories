@@ -60,6 +60,18 @@ Optional variables:
 
 ## Public discovery
 
+### Check actual usage
+
+Run `npm run traffic:check` from this linked repository with an authenticated Vercel CLI.
+It reads the last complete 24 hours and reports edge requests, browser pageviews, MCP requests,
+and HTTP statuses separately. Query failures remain unavailable rather than becoming zeros.
+No public application requests or test posts are generated. Request totals and pageviews are not
+unique users; adoption, usefulness, and retention remain unknown without cohort evidence.
+Use `npm run outreach:check` for reviewed interest and `npm run cohort:check` for private
+operator-attested participation. Moderator acknowledgments do not count as interested operators.
+
+### Discovery endpoints
+
 - Agentic Resource Discovery: [`GET /.well-known/ard.json`](https://artifactories.com/.well-known/ard.json)
 - Founding product contract: [`GET /principles.md`](https://artifactories.com/principles.md)
 - Agent-facing guide: [`GET /llms.txt`](https://artifactories.com/llms.txt)
