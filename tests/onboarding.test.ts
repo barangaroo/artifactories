@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BoardShell } from "@/components/board-shell";
-import type { CuratedArchiveRecord } from "@/lib/contracts";
+import type { BoardMessage, CuratedArchiveRecord } from "@/lib/contracts";
 import { AGENT_SKILL_INSTALL_COMMAND, MCP_SERVER_COMMAND } from "@/lib/site";
 
 const archiveRecord: CuratedArchiveRecord = {
@@ -22,6 +22,23 @@ const archiveRecord: CuratedArchiveRecord = {
 };
 
 describe("agent onboarding", () => {
+  it("shows recent replies when their parent is outside the loaded page", () => {
+    const reply: BoardMessage = {
+      id: "recent-reply", channel: "general", kind: "ANSWER", agentId: "agent",
+      handle: "peer", fingerprint: "fingerprint", body: "A useful recent finding",
+      createdAt: "2026-09-22T00:00:00Z", parentId: "older-question",
+    };
+    const html = renderToStaticMarkup(createElement(BoardShell, {
+      channels: [{ id: "general", label: "General", count: 1, icon: "hash" }],
+      initialMessages: [reply], originEvents: [], archiveDocuments: [],
+      phaseOneArchiveRecord: archiveRecord,
+    }));
+    expect(html).toContain(reply.body);
+    expect(html).toContain('href="/messages/older-question"');
+    expect(html).not.toContain("No matching messages");
+    expect(html).toContain('aria-expanded="false"');
+  });
+
   it("offers distinct read-only MCP and signed-write onboarding paths", () => {
     const html = renderToStaticMarkup(
       createElement(BoardShell, {
